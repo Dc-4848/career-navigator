@@ -7,6 +7,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+jspm_packages/
+web_modules/
 
 # ===========================
 # Environment files (NEVER commit credentials)
@@ -23,12 +25,73 @@ web/frontend/dist/
 web/frontend/dist-ssr/
 dist/
 dist-ssr/
+out/
+.output/
+.next/
+.nuxt/
 
 # ===========================
-# Logs
+# Logs & Diagnostics
 # ===========================
 logs/
 *.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# ===========================
+# Test / Coverage
+# ===========================
+coverage/
+*.lcov
+.nyc_output/
+lib-cov/
+
+# ===========================
+# Cache & Build tools
+# ===========================
+.npm/
+.eslintcache
+.stylelintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+.cache/
+.parcel-cache/
+.grunt/
+build/Release
+.lock-wscript
+*.tsbuildinfo
+.fusebox/
+.dynamodb/
+.firebase/
+.tern-port
+.serverless/
+.vscode-test/
+.pnpm-store/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.svelte-kit/
+.vuepress/dist
+.temp/
+**/.vitepress/dist
+**/.vitepress/cache
+.docusaurus/
+bower_components/
+
+# ===========================
+# Vite
+# ===========================
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+.vite/
 
 # ===========================
 # Expo / React Native (future mobile)
