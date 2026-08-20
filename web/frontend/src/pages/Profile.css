@@ -1,0 +1,58 @@
+/* ── Profile Page Styles ── */
+
+.profile-section {
+  padding: var(--space-3xl) 0 var(--space-4xl);
+}
+
+.profile-form {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: var(--space-2xl);
+}
+
+.profile-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-md);
+}
+
+.form-error {
+  font-size: var(--fs-xs);
+  color: var(--accent-rose);
+  font-weight: 500;
+}
+
+.skill-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.skill-suggest-btn {
+  padding: 4px 10px;
+  font-size: var(--fs-xs);
+  font-family: var(--font-primary);
+  background: transparent;
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.skill-suggest-btn:hover {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal);
+  background: var(--accent-teal-dim);
+  border-style: solid;
+}
+
+@media (max-width: 768px) {
+  .profile-form {
+    padding: var(--space-lg);
+  }
+}

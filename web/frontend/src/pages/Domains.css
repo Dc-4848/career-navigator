@@ -1,0 +1,212 @@
+/* ── Domains Page Styles ── */
+
+.domains-section {
+  padding: var(--space-3xl) 0 var(--space-4xl);
+}
+
+.domains-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.domain-card {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease forwards;
+  cursor: default;
+}
+
+.domain-card:hover {
+  transform: translateY(-2px);
+}
+
+.domain-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  cursor: pointer;
+}
+
+.domain-header-text {
+  flex: 1;
+}
+
+.domain-name {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.domain-tagline {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.domain-expand-icon {
+  font-size: var(--fs-xl);
+  color: var(--text-muted);
+  transition: transform var(--transition-base);
+  user-select: none;
+}
+
+.domain-expand-icon.rotated {
+  transform: rotate(180deg);
+}
+
+/* Expanded Details */
+.domain-details {
+  animation: fadeIn 0.3s ease;
+}
+
+.domain-desc {
+  font-size: var(--fs-base);
+  line-height: 1.7;
+  margin-bottom: var(--space-lg);
+}
+
+.domain-block {
+  margin-bottom: var(--space-xl);
+}
+
+.domain-block-title {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  color: var(--text-primary);
+}
+
+.domain-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+/* Projects */
+.domain-projects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+}
+
+.project-item {
+  padding: var(--space-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.project-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+  gap: var(--space-sm);
+}
+
+.project-name {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+
+.project-desc {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Careers */
+.domain-careers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.career-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--glass-bg);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+}
+
+.career-role {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.career-salary {
+  color: var(--accent-teal);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+/* Select Button */
+.domain-select-btn {
+  width: 100%;
+  margin-top: var(--space-md);
+}
+
+/* Color accents on expanded */
+.domain-card-teal.expanded {
+  border-color: rgba(0, 245, 196, 0.2);
+}
+.domain-card-violet.expanded {
+  border-color: rgba(124, 106, 255, 0.2);
+}
+.domain-card-rose.expanded {
+  border-color: rgba(255, 107, 107, 0.2);
+}
+
+/* Quiz CTA */
+.domains-quiz-cta {
+  margin-top: var(--space-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xl);
+  padding: var(--space-xl) var(--space-2xl);
+  background: linear-gradient(135deg, rgba(124, 106, 255, 0.05), rgba(0, 245, 196, 0.05));
+  border: 1px solid rgba(124, 106, 255, 0.15);
+}
+
+.quiz-cta-content h4 {
+  font-size: var(--fs-xl);
+  margin-bottom: var(--space-xs);
+}
+
+.quiz-cta-content p {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Rose button variant */
+.btn-rose {
+  background: linear-gradient(135deg, var(--accent-rose), #e05555);
+  color: white;
+  box-shadow: 0 4px 20px var(--accent-rose-glow);
+}
+.btn-rose:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--accent-rose-glow);
+}
+
+@media (max-width: 768px) {
+  .domains-quiz-cta {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--space-xl);
+  }
+  .domain-projects {
+    grid-template-columns: 1fr;
+  }
+  .career-item {
+    flex-wrap: wrap;
+  }
+}

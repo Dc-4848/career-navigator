@@ -1,0 +1,166 @@
+const roadmapData = {
+  webdev: {
+    title: '12-Week Web Development Roadmap',
+    description: 'From HTML to Full-Stack Architect',
+    weeks: [
+      { week: 1, title: 'Internet & HTML Basics', topics: ['How the web works', 'Semantic HTML5', 'Forms & Inputs'], project: 'Build a structured personal bio page.' },
+      { week: 2, title: 'CSS Styling & Layouts', topics: ['Box Model', 'Flexbox & Grid', 'Responsive Design (Media Queries)'], project: 'Style your bio page to look modern and work on mobile.' },
+      { week: 3, title: 'JavaScript Fundamentals', topics: ['Variables, Types, Functions', 'Control Flow', 'DOM Manipulation'], project: 'Interactive To-Do list using Vanilla JS.' },
+      { week: 4, title: 'Advanced JavaScript', topics: ['ES6+ Features', 'Promises & Async/Await', 'Fetch API'], project: 'Weather app using a public API.' },
+      { week: 5, title: 'React Basics', topics: ['Components & Props', 'State (useState)', 'Handling Events'], project: 'Rebuild your To-Do list in React.' },
+      { week: 6, title: 'Advanced React', topics: ['useEffect & Data Fetching', 'Context API', 'React Router'], project: 'Multi-page movie search app.' },
+      { week: 7, title: 'Backend Fundamentals', topics: ['Node.js Basics', 'Express.js', 'RESTful API Design'], project: 'Create a simple REST API for notes.' },
+      { week: 8, title: 'Databases (MongoDB)', topics: ['NoSQL vs SQL', 'Mongoose Models', 'CRUD Operations'], project: 'Connect your notes API to MongoDB.' },
+      { week: 9, title: 'Authentication & Security', topics: ['JWT Authentication', 'Password Hashing', 'CORS'], project: 'Add login/register to your notes app.' },
+      { week: 10, title: 'Full Stack Integration', topics: ['Connecting React & Express', 'State Management (Redux/Zustand)'], project: 'Full-stack social media dashboard.' },
+      { week: 11, title: 'Testing & Optimization', topics: ['Jest/React Testing Library', 'Performance profiling', 'Lighthouse'], project: 'Write tests for your full-stack app.' },
+      { week: 12, title: 'Deployment & CI/CD', topics: ['Git workflows', 'Vercel/Render Deployment', 'Docker basics'], project: 'Deploy your final project to production.' },
+    ]
+  },
+  aiml: {
+    title: '12-Week AI/ML Roadmap',
+    description: 'From Python to Deep Learning',
+    weeks: [
+      { week: 1, title: 'Python Refresher', topics: ['Data Structures', 'Functions & OOP', 'Comprehensions'], project: 'CLI based text-analyzer tool.' },
+      { week: 2, title: 'Math for ML', topics: ['Linear Algebra Basics', 'Calculus for Optimization', 'Probability'], project: 'Implement matrix operations from scratch.' },
+      { week: 3, title: 'Data Manipulation', topics: ['NumPy arrays', 'Pandas DataFrames', 'Data Cleaning'], project: 'Clean and explore a messy Kaggle dataset.' },
+      { week: 4, title: 'Data Visualization', topics: ['Matplotlib', 'Seaborn', 'Exploratory Data Analysis (EDA)'], project: 'Visual dashboard of stock market data.' },
+      { week: 5, title: 'Intro to Machine Learning', topics: ['Supervised vs Unsupervised', 'Scikit-Learn Basics', 'Train/Test Split'], project: 'Train a basic Linear Regression model.' },
+      { week: 6, title: 'Classification Algorithms', topics: ['Logistic Regression', 'Decision Trees', 'Evaluation Metrics (ROC/AUC)'], project: 'Spam email classifier.' },
+      { week: 7, title: 'Advanced ML & Ensembles', topics: ['Random Forests', 'XGBoost', 'Hyperparameter Tuning'], project: 'House price predictor with optimized parameters.' },
+      { week: 8, title: 'Deep Learning Basics', topics: ['Neural Networks', 'Forward/Backpropagation', 'PyTorch/TensorFlow setup'], project: 'Build a basic perceptron.' },
+      { week: 9, title: 'Computer Vision (CV)', topics: ['Convolutional Neural Networks (CNNs)', 'Image Preprocessing', 'Transfer Learning'], project: 'Image classifier (Cat vs Dog) using ResNet.' },
+      { week: 10, title: 'Natural Language Processing', topics: ['Tokenization', 'Word Embeddings', 'RNNs & LSTMs'], project: 'Sentiment analysis on movie reviews.' },
+      { week: 11, title: 'Modern AI (Transformers)', topics: ['Attention Mechanism', 'Hugging Face Library', 'LLM Fine-tuning basics'], project: 'Simple conversational chatbot.' },
+      { week: 12, title: 'Deployment (MLOps)', topics: ['FastAPI for Model Serving', 'Dockerizing models', 'Streamlit'], project: 'Deploy your sentiment analyzer as a web app.' },
+    ]
+  },
+  datascience: {
+    title: '12-Week Data Science Roadmap',
+    description: 'From Raw Data to Business Insights',
+    weeks: [
+      { week: 1, title: 'SQL Fundamentals', topics: ['SELECT, WHERE, GROUP BY', 'JOINS', 'Subqueries'], project: 'Query a sample e-commerce database.' },
+      { week: 2, title: 'Advanced SQL & Databases', topics: ['Window Functions', 'CTEs', 'Database Normalization'], project: 'Complex queries on a real-world dataset.' },
+      { week: 3, title: 'Python for Data Science', topics: ['Python Basics', 'Jupyter Notebooks', 'Virtual Environments'], project: 'Setup your data science environment.' },
+      { week: 4, title: 'Data Wrangling', topics: ['Pandas', 'Handling Missing Data', 'Merging Datasets'], project: 'Merge and clean data from 3 different sources.' },
+      { week: 5, title: 'Exploratory Data Analysis', topics: ['Summary Statistics', 'Outlier Detection', 'Correlation'], project: 'Comprehensive EDA report on a health dataset.' },
+      { week: 6, title: 'Data Visualization', topics: ['Matplotlib & Seaborn', 'Plotly for interactivity', 'Storytelling with Data'], project: 'Interactive COVID-19 dashboard.' },
+      { week: 7, title: 'Statistical Analysis', topics: ['Hypothesis Testing', 'A/B Testing', 'Confidence Intervals'], project: 'Analyze the results of an A/B test.' },
+      { week: 8, title: 'Predictive Modeling Basics', topics: ['Linear Regression', 'Time Series Forecasting', 'Scikit-Learn'], project: 'Predict future sales based on historical data.' },
+      { week: 9, title: 'Classification Models', topics: ['Logistic Regression', 'Decision Trees', 'Model Evaluation'], project: 'Customer churn prediction model.' },
+      { week: 10, title: 'Unsupervised Learning', topics: ['K-Means Clustering', 'PCA (Dimensionality Reduction)'], project: 'Customer segmentation for marketing.' },
+      { week: 11, title: 'BI Tools (Power BI / Tableau)', topics: ['Connecting Data Sources', 'Creating Dashboards', 'DAX/Calculated Fields'], project: 'Interactive BI dashboard for executives.' },
+      { week: 12, title: 'Portfolio & Presentation', topics: ['Writing Data Reports', 'GitHub Portfolio', 'Mock Presentations'], project: 'Present your end-to-end data project.' },
+    ]
+  },
+  cybersecurity: {
+    title: '12-Week Cybersecurity Roadmap',
+    description: 'From Networks to Ethical Hacking',
+    weeks: [
+      { week: 1, title: 'Networking Fundamentals', topics: ['OSI Model', 'TCP/IP', 'DNS, DHCP, HTTP'], project: 'Setup and analyze a home network.' },
+      { week: 2, title: 'Linux Basics', topics: ['Command Line', 'File Permissions', 'Bash Scripting'], project: 'Write a script to automate file backups.' },
+      { week: 3, title: 'Security Principles', topics: ['CIA Triad', 'Identity & Access Management', 'Cryptography Basics'], project: 'Implement simple encryption/decryption.' },
+      { week: 4, title: 'System Administration', topics: ['Windows Active Directory', 'Linux Sysadmin', 'Log Analysis'], project: 'Analyze system logs to find anomalies.' },
+      { week: 5, title: 'Network Security', topics: ['Firewalls', 'IDS/IPS', 'Wireshark & Packet Analysis'], project: 'Capture and analyze packets using Wireshark.' },
+      { week: 6, title: 'Vulnerability Management', topics: ['Nmap scanning', 'Nessus/OpenVAS', 'CVSS Scoring'], project: 'Scan a virtual machine for vulnerabilities.' },
+      { week: 7, title: 'Web Application Security', topics: ['OWASP Top 10', 'SQL Injection', 'Cross-Site Scripting (XSS)'], project: 'Exploit a deliberately vulnerable web app (e.g., DVWA).' },
+      { week: 8, title: 'Penetration Testing (Ethical Hacking)', topics: ['Metasploit Framework', 'Exploitation', 'Privilege Escalation'], project: 'Perform a basic penetration test on a VM.' },
+      { week: 9, title: 'Incident Response', topics: ['Incident Lifecycle', 'Digital Forensics', 'SIEM Basics'], project: 'Draft an incident response plan for a simulated breach.' },
+      { week: 10, title: 'Cloud Security', topics: ['AWS/Azure Security', 'IAM Policies', 'Container Security'], project: 'Secure an AWS S3 bucket and EC2 instance.' },
+      { week: 11, title: 'Malware Analysis', topics: ['Static vs Dynamic Analysis', 'Sandboxing', 'Reverse Engineering Basics'], project: 'Analyze a benign malware sample safely.' },
+      { week: 12, title: 'CTF & Certifications', topics: ['Capture The Flag Strategies', 'CompTIA Security+', 'Report Writing'], project: 'Compete in a beginner CTF and write a report.' },
+    ]
+  },
+  appdev: {
+    title: '12-Week App Development Roadmap',
+    description: 'From UI Design to App Store',
+    weeks: [
+      { week: 1, title: 'UI/UX Fundamentals', topics: ['Figma Basics', 'Mobile Design Patterns', 'Wireframing'], project: 'Design a high-fidelity prototype in Figma.' },
+      { week: 2, title: 'Programming Basics (Dart/JS)', topics: ['Variables, Functions', 'Async Programming', 'OOP'], project: 'Command-line utility tool.' },
+      { week: 3, title: 'Framework Basics (React Native/Flutter)', topics: ['Components/Widgets', 'Layouts', 'Styling'], project: 'Static UI of a login and home screen.' },
+      { week: 4, title: 'State & Interactivity', topics: ['Local State', 'Handling Input', 'Lists and ScrollViews'], project: 'Interactive To-Do List App.' },
+      { week: 5, title: 'Navigation', topics: ['Stack Navigation', 'Tabs & Drawers', 'Passing Data between screens'], project: 'Multi-screen portfolio app.' },
+      { week: 6, title: 'Networking & APIs', topics: ['Fetching Data', 'JSON Parsing', 'Handling Loading/Errors'], project: 'Weather app fetching real-time data.' },
+      { week: 7, title: 'Advanced State Management', topics: ['Redux / Provider / Riverpod', 'Global State'], project: 'E-commerce app with a functional cart.' },
+      { week: 8, title: 'Local Storage & Databases', topics: ['AsyncStorage/SharedPreferences', 'SQLite / Realm'], project: 'Offline-first notes app.' },
+      { week: 9, title: 'Backend Integration (Firebase)', topics: ['Firebase Auth', 'Firestore / Realtime DB', 'Cloud Storage'], project: 'Social media app with image upload and feed.' },
+      { week: 10, title: 'Native Features', topics: ['Camera API', 'Location Services / GPS', 'Push Notifications'], project: 'Location-based fitness tracker app.' },
+      { week: 11, title: 'Animations & Polish', topics: ['Lottie Animations', 'Custom Transitions', 'Performance Profiling'], project: 'Add fluid animations to your main project.' },
+      { week: 12, title: 'Publishing & App Store', topics: ['App Signing', 'App Store Connect / Play Console', 'CI/CD for Mobile'], project: 'Prepare and submit your app for review.' },
+    ]
+  },
+  cloud: {
+    title: '12-Week Cloud & DevOps Roadmap',
+    description: 'From Linux Admin to Cloud Architect',
+    weeks: [
+      { week: 1, title: 'Linux Administration', topics: ['Bash Scripting', 'File Systems', 'Permissions & Networking'], project: 'Write a script to automate server backups.' },
+      { week: 2, title: 'Networking Fundamentals', topics: ['TCP/IP', 'DNS & Routing', 'Load Balancing Basics'], project: 'Configure a reverse proxy with Nginx.' },
+      { week: 3, title: 'Git & Version Control', topics: ['Branching Strategies', 'Resolving Conflicts', 'GitHooks'], project: 'Set up a collaborative repo with branch protection.' },
+      { week: 4, title: 'Cloud Computing Intro (AWS)', topics: ['EC2 Instances', 'S3 Storage', 'IAM Policies'], project: 'Deploy a static website on S3.' },
+      { week: 5, title: 'Advanced Cloud Services', topics: ['VPCs & Subnets', 'RDS Databases', 'CloudWatch'], project: 'Deploy a 3-tier application architecture.' },
+      { week: 6, title: 'Containerization (Docker)', topics: ['Writing Dockerfiles', 'Docker Compose', 'Volumes & Networks'], project: 'Containerize a Node.js/MongoDB app.' },
+      { week: 7, title: 'Continuous Integration (CI)', topics: ['GitHub Actions', 'Jenkins Basics', 'Automated Testing'], project: 'Build a pipeline to test and lint code on push.' },
+      { week: 8, title: 'Continuous Deployment (CD)', topics: ['Deployment Strategies', 'Rolling Updates', 'Artifact Repositories'], project: 'Automate Docker image pushes to AWS ECR.' },
+      { week: 9, title: 'Infrastructure as Code (IaC)', topics: ['Terraform Basics', 'State Management', 'Modules'], project: 'Provision your VPC and EC2 instances via Terraform.' },
+      { week: 10, title: 'Configuration Management', topics: ['Ansible Basics', 'Playbooks', 'Inventory Management'], project: 'Configure 3 servers simultaneously using Ansible.' },
+      { week: 11, title: 'Container Orchestration (K8s)', topics: ['Kubernetes Architecture', 'Pods & Deployments', 'Services'], project: 'Deploy your Dockerized app to a local Minikube cluster.' },
+      { week: 12, title: 'Monitoring & Observability', topics: ['Prometheus', 'Grafana', 'Log Aggregation (ELK)'], project: 'Set up a dashboard to monitor server CPU and memory.' },
+    ]
+  },
+  gamedev: {
+    title: '12-Week Game Development Roadmap',
+    description: 'From Math to Multiplayer Worlds',
+    weeks: [
+      { week: 1, title: 'Programming Fundamentals', topics: ['C# Basics', 'Variables & Loops', 'Object-Oriented Programming'], project: 'Text-based adventure game in console.' },
+      { week: 2, title: 'Math for Games', topics: ['Vectors', 'Matrices', 'Trigonometry'], project: 'Calculate distances and angles between points.' },
+      { week: 3, title: 'Intro to Unity Engine', topics: ['Unity Interface', 'GameObjects & Components', 'Scenes'], project: 'Build a simple environment with primitive shapes.' },
+      { week: 4, title: 'Physics & Collisions', topics: ['Rigidbodies', 'Colliders', 'Triggers & Raycasts'], project: 'Create a rolling ball physics maze.' },
+      { week: 5, title: 'Player Input & Movement', topics: ['Input System', 'Character Controllers', 'Camera Follow'], project: 'Basic 3D character movement and jumping.' },
+      { week: 6, title: 'Game Design & Logic', topics: ['Game Loops', 'Managers', 'Spawning Objects'], project: 'Space Invaders clone.' },
+      { week: 7, title: 'UI & Audio', topics: ['Canvas & UI Elements', 'Audio Sources & Listeners', 'Menus'], project: 'Add a main menu, pause menu, and sound effects.' },
+      { week: 8, title: 'Animation Systems', topics: ['Animator Controllers', 'Blend Trees', 'Animation Events'], project: 'Animate a 3D character running and jumping.' },
+      { week: 9, title: 'Artificial Intelligence', topics: ['NavMesh & Pathfinding', 'State Machines', 'Line of Sight'], project: 'Create enemy AI that patrols and chases the player.' },
+      { week: 10, title: 'Level Design & Polish', topics: ['Lighting', 'Particle Systems', 'Post Processing'], project: 'Enhance your environment with fog, bloom, and particles.' },
+      { week: 11, title: 'Advanced Topics (Optional)', topics: ['Multiplayer Basics (Photon)', 'Object Pooling', 'Shaders'], project: 'Implement object pooling for projectiles.' },
+      { week: 12, title: 'Publishing & Optimization', topics: ['Profiling', 'Reducing Draw Calls', 'Build Settings'], project: 'Export your game for PC or WebGL and publish on Itch.io.' },
+    ]
+  },
+  blockchain: {
+    title: '12-Week Blockchain & Web3 Roadmap',
+    description: 'From Cryptography to Decentralized Apps',
+    weeks: [
+      { week: 1, title: 'Blockchain Fundamentals', topics: ['How Blockchain Works', 'Hashing & Cryptography', 'Consensus Mechanisms'], project: 'Write a basic conceptual blockchain in JavaScript.' },
+      { week: 2, title: 'Ethereum & Wallets', topics: ['EVM Basics', 'Public/Private Keys', 'Setting up MetaMask'], project: 'Connect a wallet to test networks and get test ETH.' },
+      { week: 3, title: 'Solidity Basics', topics: ['Data Types', 'Functions', 'Mappings & Structs'], project: 'Write a simple smart contract to store and retrieve a string.' },
+      { week: 4, title: 'Advanced Solidity', topics: ['Inheritance', 'Interfaces', 'Modifiers & Events'], project: 'Create an ownership control contract.' },
+      { week: 5, title: 'Development Environments', topics: ['Hardhat', 'Truffle', 'Local Blockchains (Ganache)'], project: 'Set up a Hardhat project and compile contracts locally.' },
+      { week: 6, title: 'Testing Smart Contracts', topics: ['Chai/Mocha', 'Writing Test Cases', 'Simulating Transactions'], project: 'Write comprehensive unit tests for your contract.' },
+      { week: 7, title: 'Tokens & Standards', topics: ['ERC-20 Standard', 'Minting & Burning', 'OpenZeppelin'], project: 'Create and deploy your own custom cryptocurrency token.' },
+      { week: 8, title: 'Web3 Integration (Frontend)', topics: ['Ethers.js / Web3.js', 'Connecting React to Contracts', 'Reading State'], project: 'Build a UI to display your token balance.' },
+      { week: 9, title: 'Writing Transactions', topics: ['Signing Transactions', 'Handling Gas', 'Listening to Events'], project: 'Build a UI to send your token to other addresses.' },
+      { week: 10, title: 'NFTs & ERC-721', topics: ['ERC-721 Standard', 'IPFS Storage', 'Metadata'], project: 'Mint an NFT with metadata stored on IPFS.' },
+      { week: 11, title: 'DeFi Concepts', topics: ['Liquidity Pools', 'Staking', 'Oracles (Chainlink)'], project: 'Build a simple staking contract that rewards users.' },
+      { week: 12, title: 'Security & Deployment', topics: ['Reentrancy Attacks', 'Auditing Basics', 'Mainnet Deployment'], project: 'Deploy your fully tested dApp to a live testnet (Goerli/Sepolia).' },
+    ]
+  },
+  uiux: {
+    title: '12-Week UI/UX Design Roadmap',
+    description: 'From User Research to Interactive Prototypes',
+    weeks: [
+      { week: 1, title: 'UX Fundamentals', topics: ['What is UX?', 'Design Thinking Process', 'User-Centered Design'], project: 'Analyze the UX of your favorite app and document pain points.' },
+      { week: 2, title: 'User Research', topics: ['User Interviews', 'Surveys', 'Creating Personas'], project: 'Create 2 detailed user personas for a fictional product.' },
+      { week: 3, title: 'Information Architecture', topics: ['User Journeys', 'Sitemaps', 'Card Sorting'], project: 'Map out the user journey for a food delivery app.' },
+      { week: 4, title: 'Wireframing', topics: ['Low-fidelity vs High-fidelity', 'Paper Sketching', 'Balsamiq/Figma Basics'], project: 'Sketch low-fidelity wireframes for your app concept.' },
+      { week: 5, title: 'UI Fundamentals', topics: ['Color Theory', 'Typography', 'Spacing & Grids'], project: 'Create a mood board and select a typography pairing.' },
+      { week: 6, title: 'Mastering Figma', topics: ['Components', 'Auto Layout', 'Variants'], project: 'Build a responsive navigation bar using Auto Layout.' },
+      { week: 7, title: 'High-Fidelity Design', topics: ['Visual Hierarchy', 'Accessibility (WCAG)', 'Iconography'], project: 'Convert your wireframes into high-fidelity screens.' },
+      { week: 8, title: 'Interactive Prototyping', topics: ['Figma Prototyping', 'Transitions', 'Smart Animate'], project: 'Link your screens together into a clickable prototype.' },
+      { week: 9, title: 'Design Systems', topics: ['Design Tokens', 'Component Libraries', 'Documentation'], project: 'Extract a mini design system (colors, fonts, buttons) from your app.' },
+      { week: 10, title: 'Usability Testing', topics: ['A/B Testing', 'Moderated vs Unmoderated', 'Analyzing Feedback'], project: 'Test your prototype with 3 users and record feedback.' },
+      { week: 11, title: 'Micro-interactions', topics: ['Hover States', 'Loading Animations', 'Feedback loops'], project: 'Add delightful micro-interactions to buttons and inputs.' },
+      { week: 12, title: 'Handoff & Portfolio', topics: ['Developer Handoff (Zeplin/Figma)', 'Case Studies', 'Behance'], project: 'Write a comprehensive case study of your project for your portfolio.' },
+    ]
+  }
+};
+
+export default roadmapData;
