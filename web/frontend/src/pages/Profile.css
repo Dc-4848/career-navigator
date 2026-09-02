@@ -5,7 +5,7 @@
 }
 
 .profile-form {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -15,44 +15,162 @@
 
 .profile-actions {
   display: flex;
-  justify-content: center;
+  gap: var(--space-md);
+  justify-content: flex-end;
   padding-top: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.required-star {
+  color: var(--accent-rose);
+  margin-left: 2px;
+}
+
+.input-error {
+  border-color: var(--accent-rose) !important;
+  box-shadow: 0 0 0 2px var(--accent-rose-dim) !important;
 }
 
 .form-error {
   font-size: var(--fs-xs);
   color: var(--accent-rose);
   font-weight: 500;
+  margin-top: 4px;
+}
+
+/* Banners */
+.profile-banner {
+  max-width: 760px;
+  margin: 0 auto var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  animation: fadeInDown 0.3s ease;
+}
+
+.success-banner {
+  background: rgba(0, 245, 196, 0.08);
+  border: 1px solid rgba(0, 245, 196, 0.3);
+  color: var(--accent-teal);
+}
+
+.error-banner {
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: var(--accent-rose);
+}
+
+.banner-icon {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+/* Skill Suggestions */
+.skill-suggestions-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.suggestion-hint {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
 }
 
 .skill-suggestions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
 }
 
 .skill-suggest-btn {
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: var(--fs-xs);
   font-family: var(--font-primary);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px dashed var(--glass-border);
   border-radius: var(--radius-full);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.skill-suggest-btn:hover {
+.skill-suggest-btn:hover:not(:disabled) {
   border-color: var(--accent-teal);
   color: var(--accent-teal);
   background: var(--accent-teal-dim);
   border-style: solid;
+  transform: translateY(-1px);
+}
+
+.check-box-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--glass-border);
+  font-size: 11px;
+  color: var(--accent-teal);
+  margin-right: 6px;
+  background: rgba(0,0,0,0.2);
+}
+
+.check-option.selected .check-box-indicator {
+  border-color: var(--accent-teal);
+  background: var(--accent-teal-dim);
+}
+
+/* Skeleton Loading State */
+.profile-skeleton {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.skeleton-line {
+  height: 24px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-title {
+  width: 45%;
+  height: 32px;
+}
+
+.skeleton-subtitle {
+  width: 70%;
+  height: 18px;
+}
+
+.skeleton-block {
+  height: 72px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
 }
 
 @media (max-width: 768px) {
   .profile-form {
     padding: var(--space-lg);
   }
+  .profile-actions {
+    flex-direction: column;
+  }
+  .profile-actions .btn {
+    width: 100%;
+  }
 }
+

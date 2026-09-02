@@ -13,6 +13,7 @@ import Roadmap from './pages/Roadmap';
 import SkillGap from './pages/SkillGap';
 import Internships from './pages/Internships';
 import Hackathons from './pages/Hackathons';
+import ResumeAnalyzer from './pages/ResumeAnalyzer';
 
 export default function App() {
   return (
@@ -31,8 +32,10 @@ export default function App() {
           <Route path="/skills" element={<ProtectedRoute><SkillGap /></ProtectedRoute>} />
           <Route path="/internships" element={<ProtectedRoute><Internships /></ProtectedRoute>} />
           <Route path="/hackathons" element={<ProtectedRoute><Hackathons /></ProtectedRoute>} />
+          <Route path="/resume-analyzer" element={<ProtectedRoute><ResumeAnalyzer /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AppProvider>
   );
 }
+

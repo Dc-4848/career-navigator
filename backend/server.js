@@ -26,47 +26,74 @@ app.get('/', (req, res) => {
 
 // Database Connection
 const startServer = async () => {
-  try {
-    let mongoUri = process.env.MONGO_URI;
-    // Determine if we should use In-Memory MongoDB
-    const useInMemory = process.env.USE_IN_MEMORY_DB !== 'false' && (!mongoUri || mongoUri.includes('localhost') || mongoUri.includes('127.0.0.1'));
+  const mongoUri = process.env.MONGO_URI;
+  const isProduction = process.env.NODE_ENV === 'production';
 
-    if (useInMemory) {
-      const { MongoMemoryServer } = require('mongodb-memory-server');
-      const mongoServer = await MongoMemoryServer.create();
-      mongoUri = mongoServer.getUri();
-      console.log('Using In-Memory MongoDB (No installation required!)');
-      console.log(`In-Memory MongoDB Connection URI: ${mongoUri}`);
-    } else {
-      console.log(`Connecting to external MongoDB: ${mongoUri}`);
+  if (isProduction) {
+    if (!mongoUri) {
+      console.error('FATAL: MONGO_URI is missing in production environment.');
+      process.exit(1);
+    }
+    try {
+      console.log('Connecting to MongoDB Atlas (Production)...');
+      await mongoose.connect(mongoUri);
+      console.log('MongoDB Atlas Connected successfully');
+    } catch (err) {
+      console.error('FATAL: MongoDB Atlas Connection Error in production:', err);
+      process.exit(1);
+    }
+  } else {
+    // Development mode
+    let connected = false;
+    if (mongoUri) {
+      try {
+        console.log('Connecting to MongoDB Atlas...');
+        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 4000 });
+        console.log('MongoDB Atlas Connected successfully');
+        connected = true;
+      } catch (err) {
+        console.warn('MongoDB Atlas connection failed (' + err.message + ').');
+        console.warn('Falling back to in-memory database for local demonstration...');
+      }
     }
 
-    await mongoose.connect(mongoUri);
-    console.log('MongoDB Connected');
-
-    // Seed test users if database is empty
-    const User = require('./models/User');
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log('Seeding initial test users...');
-      await User.create([
-        {
-          name: 'Test User',
-          email: 'test@careernavigator.com',
-          password: 'test123',
-          role: 'user'
-        },
-        {
-          name: 'Admin User',
-          email: 'admin@careernavigator.com',
-          password: 'admin123',
-          role: 'admin'
-        }
-      ]);
-      console.log('Test users seeded successfully!');
+    if (!connected) {
+      try {
+        const { MongoMemoryServer } = require('mongodb-memory-server');
+        const mongoServer = await MongoMemoryServer.create();
+        const fallbackUri = mongoServer.getUri();
+        await mongoose.connect(fallbackUri);
+        console.log('Connected to Local In-Memory MongoDB (Development & Demo Mode)');
+      } catch (fallbackErr) {
+        console.error('Database connection failed:', fallbackErr);
+      }
     }
-  } catch (err) {
-    console.log('MongoDB Connection Error: ', err);
+
+    // Seed test users if needed
+    try {
+      const User = require('./models/User');
+      const userCount = await User.countDocuments();
+      if (userCount === 0) {
+        console.log('Seeding initial demonstration test users...');
+        await User.create([
+          {
+            name: 'Demo Student',
+            email: 'student@careernavigator.com',
+            password: 'password123',
+            role: 'user'
+          },
+          {
+            name: 'Faculty Demo User',
+            email: 'demo@careernavigator.com',
+            password: 'password123',
+            role: 'user'
+          }
+        ]);
+        console.log('Demonstration test users seeded successfully!');
+      }
+    } catch (seedErr) {
+      // Ignore seed error
+    }
   }
 };
 
@@ -77,3 +104,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+

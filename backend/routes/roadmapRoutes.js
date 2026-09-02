@@ -3,21 +3,28 @@ const Roadmap = require('../models/Roadmap');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
-// Get saved roadmap
+// Get saved roadmap for logged in user
 router.get('/', auth, async (req, res) => {
   try {
     const roadmap = await Roadmap.findOne({ user: req.user });
-    if (!roadmap) return res.status(404).json({ message: 'Roadmap not found' });
+    if (!roadmap) {
+      return res.status(404).json({ message: 'Roadmap not found' });
+    }
     res.json(roadmap);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Get Roadmap Error:', error);
+    res.status(500).json({ message: 'Unable to fetch roadmap. Please try again.' });
   }
 });
 
-// Save roadmap
-router.post('/save', auth, async (req, res) => {
+// Handler to save or update roadmap
+const saveRoadmapHandler = async (req, res) => {
   try {
     const { roadmapData } = req.body;
+    if (!roadmapData) {
+      return res.status(400).json({ message: 'Roadmap data is required' });
+    }
+
     let roadmap = await Roadmap.findOne({ user: req.user });
 
     if (roadmap) {
@@ -29,8 +36,13 @@ router.post('/save', auth, async (req, res) => {
     await roadmap.save();
     res.json(roadmap);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Save Roadmap Error:', error);
+    res.status(500).json({ message: 'Unable to save roadmap. Please try again.' });
   }
-});
+};
+
+// Support both POST / and POST /save
+router.post('/save', auth, saveRoadmapHandler);
+router.post('/', auth, saveRoadmapHandler);
 
 module.exports = router;

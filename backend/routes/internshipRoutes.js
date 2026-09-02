@@ -3,28 +3,57 @@ const Internship = require('../models/Internship');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
-// Get saved internships
+// Get saved internships for current user
 router.get('/', auth, async (req, res) => {
   try {
-    const internships = await Internship.find({ user: req.user });
+    const internships = await Internship.find({ user: req.user }).sort({ createdAt: -1 });
     res.json(internships);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Get Internships Error:', error);
+    res.status(500).json({ message: 'Unable to fetch saved internships. Please try again.' });
   }
 });
 
-// Save an internship
-router.post('/save', auth, async (req, res) => {
+// Save an internship handler
+const saveInternshipHandler = async (req, res) => {
   try {
     const { title, company, location, link, type } = req.body;
+    if (!title || !company) {
+      return res.status(400).json({ message: 'Title and company are required' });
+    }
+
     const internship = new Internship({
       user: req.user,
-      title, company, location, link, type
+      title: title.trim(),
+      company: company.trim(),
+      location: location || '',
+      link: link || '',
+      type: type || 'internship'
     });
+
     await internship.save();
     res.status(201).json(internship);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Save Internship Error:', error);
+    res.status(500).json({ message: 'Unable to save internship. Please try again.' });
+  }
+};
+
+// Support both POST /save and POST /
+router.post('/save', auth, saveInternshipHandler);
+router.post('/', auth, saveInternshipHandler);
+
+// Delete/Unsave an internship
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const deleted = await Internship.findOneAndDelete({ _id: req.params.id, user: req.user });
+    if (!deleted) {
+      return res.status(404).json({ message: 'Saved internship not found' });
+    }
+    res.json({ message: 'Internship removed successfully', id: req.params.id });
+  } catch (error) {
+    console.error('Delete Internship Error:', error);
+    res.status(500).json({ message: 'Unable to remove internship. Please try again.' });
   }
 });
 

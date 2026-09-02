@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer } from 'react';
+import { createContext, useContext, useReducer, useEffect } from 'react';
+import api from '../api';
 
 const initialState = {
   user: JSON.parse(localStorage.getItem('user')) || null,
@@ -14,8 +15,10 @@ const initialState = {
   selectedDomain: null,
   quizResult: null,
   roadmap: null,
+  savedInternships: [],
   skillGap: null,
   loading: false,
+  profileLoaded: false,
   currentStep: 0,
 };
 
@@ -38,15 +41,23 @@ function appReducer(state, action) {
         user: null,
         token: null,
         isAuthenticated: false,
+        profileLoaded: false,
       };
     case 'SET_PROFILE':
-      return { ...state, profile: { ...state.profile, ...action.payload } };
+      return {
+        ...state,
+        profile: { ...state.profile, ...action.payload },
+        selectedDomain: action.payload.selectedDomain !== undefined ? action.payload.selectedDomain : state.selectedDomain,
+        profileLoaded: true,
+      };
     case 'SET_DOMAIN':
       return { ...state, selectedDomain: action.payload };
     case 'SET_QUIZ_RESULT':
       return { ...state, quizResult: action.payload };
     case 'SET_ROADMAP':
       return { ...state, roadmap: action.payload };
+    case 'SET_SAVED_INTERNSHIPS':
+      return { ...state, savedInternships: action.payload };
     case 'SET_SKILL_GAP':
       return { ...state, skillGap: action.payload };
     case 'SET_LOADING':
@@ -64,6 +75,33 @@ const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  // Sync profile and user state from backend when authenticated
+  useEffect(() => {
+    if (state.token && state.isAuthenticated) {
+      // Fetch user profile from MongoDB
+      api.get('/profile')
+        .then((res) => {
+          if (res.data) {
+            dispatch({ type: 'SET_PROFILE', payload: res.data });
+          }
+        })
+        .catch(() => {
+          // If 404 or profile not created yet, mark loaded as true
+          dispatch({ type: 'SET_PROFILE', payload: {} });
+        });
+
+      // Sync saved bookmarks / internships
+      api.get('/internships')
+        .then((res) => {
+          if (Array.isArray(res.data)) {
+            dispatch({ type: 'SET_SAVED_INTERNSHIPS', payload: res.data });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [state.token, state.isAuthenticated]);
+
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       {children}
@@ -76,3 +114,4 @@ export function useAppState() {
   if (!context) throw new Error('useAppState must be used within AppProvider');
   return context;
 }
+

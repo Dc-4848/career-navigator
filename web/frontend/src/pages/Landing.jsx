@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppState } from '../store/AppContext';
+import domains from '../data/domains';
 import './Landing.css';
 
 const features = [
@@ -44,6 +46,7 @@ const features = [
 const roles = ['Web Developer', 'AI Engineer', 'Data Scientist', 'Cybersecurity Analyst', 'App Developer'];
 
 export default function Landing() {
+  const { state } = useAppState();
   const navigate = useNavigate();
   const [roleIndex, setRoleIndex] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -56,6 +59,208 @@ export default function Landing() {
     return () => clearInterval(interval);
   }, []);
 
+  // Calculate profile completion percentage and missing items
+  const profile = state.profile || {};
+  const checklist = [
+    { label: 'Degree / Program', completed: !!profile.degree, route: '/profile' },
+    { label: 'Current Year', completed: !!profile.year, route: '/profile' },
+    { label: 'Skills Added', completed: Array.isArray(profile.skills) && profile.skills.length > 0, route: '/profile' },
+    { label: 'Interests Selected', completed: Array.isArray(profile.interests) && profile.interests.length > 0, route: '/profile' },
+    { label: 'Career Goal', completed: !!profile.goal, route: '/profile' },
+    { label: 'Target Domain Selected', completed: !!state.selectedDomain, route: '/domains' },
+  ];
+
+  const completedCount = checklist.filter((item) => item.completed).length;
+  const completionPercentage = Math.round((completedCount / checklist.length) * 100);
+  const missingItems = checklist.filter((item) => !item.completed);
+
+  // Determine active/recommended domain
+  const activeDomain = state.selectedDomain || (state.quizResult?.domain) || domains[0];
+  const userSkills = profile.skills || [];
+
+  // Match calculations for active domain
+  const domainSkills = activeDomain.skills || [];
+  const matchedDomainSkills = domainSkills.filter((dSkill) =>
+    userSkills.some((uSkill) => uSkill.toLowerCase() === dSkill.toLowerCase())
+  );
+  const domainMatchPercentage = domainSkills.length > 0
+    ? Math.round((matchedDomainSkills.length / domainSkills.length) * 100)
+    : 0;
+
+  const savedInternshipsCount = (state.savedInternships || []).length;
+
+  // ----------------------------------------------------
+  // AUTHENTICATED USER DASHBOARD
+  // ----------------------------------------------------
+  if (state.isAuthenticated) {
+    return (
+      <div className={`page dashboard-page ${visible ? 'visible' : ''}`}>
+        <div className="container dashboard-container">
+          {/* Welcome Header */}
+          <div className="dashboard-welcome glass-card">
+            <div className="welcome-text">
+              <span className="badge badge-teal">🚀 Career Navigator Dashboard</span>
+              <h2>
+                Welcome back, <span className="gradient-text">{state.user?.name || 'Explorer'}</span>!
+              </h2>
+              <p>Here is your career readiness, personalized roadmap, and next action items.</p>
+            </div>
+            <div className="welcome-cta">
+              <button className="btn btn-primary" onClick={() => navigate('/profile')}>
+                Edit Profile
+              </button>
+            </div>
+          </div>
+
+          {/* Top Metrics Row */}
+          <div className="dashboard-grid top-metrics-grid">
+            {/* 1. Profile Completion Card */}
+            <div className="glass-card metric-card">
+              <div className="metric-header">
+                <span className="metric-icon">📋</span>
+                <h4>Profile Completion</h4>
+              </div>
+              <div className="completion-ring-box">
+                <div className="completion-bar-wrapper">
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${completionPercentage}%` }}></div>
+                  </div>
+                  <div className="completion-value gradient-text">{completionPercentage}% Complete</div>
+                </div>
+              </div>
+
+              {missingItems.length > 0 ? (
+                <div className="missing-checklist">
+                  <span className="checklist-title">To reach 100%:</span>
+                  <ul>
+                    {missingItems.slice(0, 2).map((item, idx) => (
+                      <li key={idx}>
+                        <span className="bullet-missing">○</span> {item.label}
+                      </li>
+                    ))}
+                  </ul>
+                  <button className="text-link-btn" onClick={() => navigate(missingItems[0].route)}>
+                    Complete {missingItems[0].label} →
+                  </button>
+                </div>
+              ) : (
+                <div className="checklist-complete">
+                  <span className="badge badge-teal">✓ Profile 100% Completed</span>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Recommended Career Domain */}
+            <div className="glass-card metric-card">
+              <div className="metric-header">
+                <span className="metric-icon">{activeDomain.icon || '🧭'}</span>
+                <h4>Recommended Domain</h4>
+              </div>
+              <div className="domain-highlight">
+                <h3 style={{ color: `var(--${activeDomain.color || 'teal'}-400, var(--accent-teal))` }}>
+                  {activeDomain.name}
+                </h3>
+                <p className="domain-tagline">{activeDomain.tagline}</p>
+                <div className="match-pill">
+                  <span>Skill Match Score:</span>
+                  <strong className="gradient-text">{domainMatchPercentage}%</strong>
+                </div>
+              </div>
+              <div className="metric-actions">
+                <button className="btn btn-secondary btn-sm" onClick={() => navigate('/domains')}>
+                  Change Domain
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={() => navigate('/roadmap')}>
+                  View Roadmap →
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Saved Opportunities & Status */}
+            <div className="glass-card metric-card">
+              <div className="metric-header">
+                <span className="metric-icon">💼</span>
+                <h4>Saved Opportunities</h4>
+              </div>
+              <div className="saved-metrics">
+                <div className="saved-metric-item">
+                  <span className="saved-num gradient-text">{savedInternshipsCount}</span>
+                  <span className="saved-label">Saved Internships</span>
+                </div>
+                <div className="saved-divider"></div>
+                <div className="saved-metric-item">
+                  <span className="saved-num gradient-text">{userSkills.length}</span>
+                  <span className="saved-label">Profile Skills</span>
+                </div>
+              </div>
+              <div className="metric-actions">
+                <button className="btn btn-secondary btn-sm" onClick={() => navigate('/internships')}>
+                  Internships
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={() => navigate('/hackathons')}>
+                  Hackathons
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions Grid */}
+          <div className="dashboard-section">
+            <h3 className="section-title">
+              <span className="gradient-text">⚡ Quick Actions</span>
+            </h3>
+            <div className="quick-actions-grid">
+              <div className="glass-card action-tile" onClick={() => navigate('/profile')}>
+                <span className="action-icon">📋</span>
+                <h4>Update Profile</h4>
+                <p>Manage degree, skills, and goals</p>
+              </div>
+
+              <div className="glass-card action-tile" onClick={() => navigate('/quiz')}>
+                <span className="action-icon">🎯</span>
+                <h4>Find My Domain</h4>
+                <p>Take the AI-powered career quiz</p>
+              </div>
+
+              <div className="glass-card action-tile" onClick={() => navigate('/roadmap')}>
+                <span className="action-icon">🗺️</span>
+                <h4>View Roadmap</h4>
+                <p>12-week step-by-step master plan</p>
+              </div>
+
+              <div className="glass-card action-tile" onClick={() => navigate('/skills')}>
+                <span className="action-icon">⚡</span>
+                <h4>Skill Gap Analyzer</h4>
+                <p>Target role skills & gap breakdown</p>
+              </div>
+
+              <div className="glass-card action-tile" onClick={() => navigate('/internships')}>
+                <span className="action-icon">💼</span>
+                <h4>Explore Internships</h4>
+                <p>Find matched opportunities</p>
+              </div>
+
+              <div className="glass-card action-tile" onClick={() => navigate('/hackathons')}>
+                <span className="action-icon">🏆</span>
+                <h4>Hackathon Explorer</h4>
+                <p>Upcoming competitive events</p>
+              </div>
+
+              <div className="glass-card action-tile action-tile-highlight" onClick={() => navigate('/resume-analyzer')}>
+                <span className="action-icon">📄</span>
+                <h4>Resume Analyzer</h4>
+                <p>ATS scoring & keyword extraction</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------
+  // UNAUTHENTICATED VISITOR LANDING PAGE
+  // ----------------------------------------------------
   return (
     <div className={`page landing-page ${visible ? 'visible' : ''}`}>
       {/* Hero Section */}
@@ -85,16 +290,16 @@ export default function Landing() {
             <button
               className="btn btn-primary btn-lg"
               id="cta-start"
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/signup')}
             >
-              🚀 Start Your Journey
+              🚀 Get Started Free
             </button>
             <button
               className="btn btn-secondary btn-lg"
               id="cta-explore"
-              onClick={() => navigate('/domains')}
+              onClick={() => navigate('/login')}
             >
-              🧭 Explore Domains
+              Sign In →
             </button>
           </div>
 
@@ -161,7 +366,7 @@ export default function Landing() {
             </p>
             <button
               className="btn btn-primary btn-lg"
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/signup')}
             >
               🚀 Get Started Now
             </button>
@@ -171,3 +376,4 @@ export default function Landing() {
     </div>
   );
 }
+

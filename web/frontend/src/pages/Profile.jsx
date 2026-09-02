@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../store/AppContext';
+import api from '../api';
 import './Profile.css';
 
 const interestOptions = [
@@ -21,40 +22,88 @@ export default function Profile() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    degree: state.profile.degree || '',
-    year: state.profile.year || '',
-    skills: state.profile.skills || [],
-    interests: state.profile.interests || [],
-    goal: state.profile.goal || '',
+    degree: state.profile?.degree || '',
+    year: state.profile?.year || '',
+    skills: state.profile?.skills || [],
+    interests: state.profile?.interests || [],
+    goal: state.profile?.goal || '',
   });
 
   const [skillInput, setSkillInput] = useState('');
   const [errors, setErrors] = useState({});
+  const [initialLoading, setInitialLoading] = useState(!state.profileLoaded);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  // Fetch saved profile from MongoDB on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProfile() {
+      try {
+        const res = await api.get('/profile');
+        if (res.data && isMounted) {
+          setForm({
+            degree: res.data.degree || '',
+            year: res.data.year || '',
+            skills: Array.isArray(res.data.skills) ? res.data.skills : [],
+            interests: Array.isArray(res.data.interests) ? res.data.interests : [],
+            goal: res.data.goal || '',
+          });
+          dispatch({ type: 'SET_PROFILE', payload: res.data });
+        }
+      } catch (err) {
+        // If 404, user hasn't saved a profile yet, which is expected
+        if (err.response?.status !== 404) {
+          console.warn('Could not load profile:', err.message);
+        }
+      } finally {
+        if (isMounted) setInitialLoading(false);
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch]);
 
   function addSkill(skill) {
     const s = skill.trim();
-    if (s && !form.skills.includes(s)) {
-      setForm({ ...form, skills: [...form.skills, s] });
+    if (!s) return;
+    const exists = form.skills.some(
+      (item) => item.toLowerCase() === s.toLowerCase()
+    );
+    if (!exists) {
+      setForm((prev) => ({ ...prev, skills: [...prev.skills, s] }));
     }
     setSkillInput('');
   }
 
-  function removeSkill(skill) {
-    setForm({ ...form, skills: form.skills.filter((s) => s !== skill) });
+  function removeSkill(skillToRemove) {
+    setForm((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => s.toLowerCase() !== skillToRemove.toLowerCase()),
+    }));
   }
 
   function toggleInterest(interest) {
     const exists = form.interests.includes(interest);
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       interests: exists
-        ? form.interests.filter((i) => i !== interest)
-        : [...form.interests, interest],
-    });
+        ? prev.interests.filter((i) => i !== interest)
+        : [...prev.interests, interest],
+    }));
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(e, continueToNext = true) {
+    if (e) e.preventDefault();
+    setSaveError('');
+    setSaveSuccess(false);
+
     const newErrors = {};
     if (!form.degree) newErrors.degree = 'Please select your degree';
     if (!form.year) newErrors.year = 'Please select your year';
@@ -62,12 +111,47 @@ export default function Profile() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstError = document.querySelector('.form-error');
+      if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
-    dispatch({ type: 'SET_PROFILE', payload: form });
-    dispatch({ type: 'SET_STEP', payload: 2 });
-    navigate('/domains');
+    setSaving(true);
+    try {
+      const res = await api.post('/profile', form);
+      dispatch({ type: 'SET_PROFILE', payload: res.data });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 4000);
+
+      if (continueToNext) {
+        dispatch({ type: 'SET_STEP', payload: 2 });
+        navigate('/domains');
+      }
+    } catch (err) {
+      setSaveError(
+        err.response?.data?.message || 'Unable to save your profile. Please check your connection and try again.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (initialLoading) {
+    return (
+      <div className="page page-enter">
+        <section className="profile-section">
+          <div className="container">
+            <div className="profile-skeleton glass-card">
+              <div className="skeleton-line skeleton-title"></div>
+              <div className="skeleton-line skeleton-subtitle"></div>
+              <div className="skeleton-block"></div>
+              <div className="skeleton-block"></div>
+              <div className="skeleton-block"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
@@ -75,66 +159,107 @@ export default function Profile() {
       <section className="profile-section">
         <div className="container">
           <div className="section-header">
-            <span className="badge">📋 Step 1</span>
+            <span className="badge">📋 Step 1 of 2: Basic & Skills Information</span>
             <h2 style={{ marginTop: '16px' }}>
               Tell Us About <span className="gradient-text">Yourself</span>
             </h2>
-            <p>We'll personalize your entire journey based on your profile.</p>
+            <p>We'll personalize your entire roadmap and career recommendations based on your profile.</p>
           </div>
 
-          <form className="profile-form glass-card" onSubmit={handleSubmit} id="profile-form">
+          {/* Success Banner */}
+          {saveSuccess && (
+            <div className="profile-banner success-banner glass-card">
+              <span className="banner-icon">✓</span>
+              <span>Your profile has been saved successfully to your account!</span>
+            </div>
+          )}
+
+          {/* Error Banner */}
+          {saveError && (
+            <div className="profile-banner error-banner glass-card">
+              <span className="banner-icon">⚠</span>
+              <span>{saveError}</span>
+            </div>
+          )}
+
+          <form className="profile-form glass-card" onSubmit={(e) => handleSubmit(e, true)} id="profile-form">
             {/* Degree */}
             <div className="form-group">
-              <label className="form-label" htmlFor="degree">🎓 Degree / Program</label>
+              <label className="form-label" htmlFor="degree">
+                🎓 Degree / Program <span className="required-star">*</span>
+              </label>
               <select
-                className="form-select"
+                className={`form-select ${errors.degree ? 'input-error' : ''}`}
                 id="degree"
                 value={form.degree}
-                onChange={(e) => setForm({ ...form, degree: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, degree: e.target.value });
+                  if (errors.degree) setErrors({ ...errors, degree: null });
+                }}
+                disabled={saving}
               >
                 <option value="">Select your degree...</option>
                 <option value="btech">B.Tech / B.E.</option>
-                <option value="bsc">B.Sc Computer Science</option>
+                <option value="bsc">B.Sc Computer Science / IT</option>
                 <option value="bca">BCA</option>
                 <option value="mca">MCA</option>
                 <option value="mtech">M.Tech</option>
-                <option value="other">Other</option>
+                <option value="other">Other / Self-Taught</option>
               </select>
               {errors.degree && <span className="form-error">{errors.degree}</span>}
             </div>
 
             {/* Year */}
             <div className="form-group">
-              <label className="form-label" htmlFor="year">📅 Current Year</label>
+              <label className="form-label" htmlFor="year">
+                📅 Current Year <span className="required-star">*</span>
+              </label>
               <select
-                className="form-select"
+                className={`form-select ${errors.year ? 'input-error' : ''}`}
                 id="year"
                 value={form.year}
-                onChange={(e) => setForm({ ...form, year: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, year: e.target.value });
+                  if (errors.year) setErrors({ ...errors, year: null });
+                }}
+                disabled={saving}
               >
                 <option value="">Select your year...</option>
-                <option value="1">1st Year</option>
-                <option value="2">2nd Year</option>
-                <option value="3">3rd Year</option>
-                <option value="4">4th Year</option>
-                <option value="graduate">Graduate</option>
+                <option value="1">1st Year (Freshman)</option>
+                <option value="2">2nd Year (Sophomore)</option>
+                <option value="3">3rd Year (Junior)</option>
+                <option value="4">4th Year (Senior)</option>
+                <option value="graduate">Recent Graduate / Working</option>
               </select>
               {errors.year && <span className="form-error">{errors.year}</span>}
             </div>
 
             {/* Skills */}
             <div className="form-group">
-              <label className="form-label">💡 Current Skills</label>
-              <div className="tag-container">
+              <label className="form-label" htmlFor="skill-input">
+                💡 Current Skills (Type and press Enter)
+              </label>
+              <div className="tag-container" onClick={() => document.getElementById('skill-input')?.focus()}>
                 {form.skills.map((s) => (
                   <span className="tag" key={s}>
                     {s}
-                    <button type="button" className="tag-remove" onClick={() => removeSkill(s)}>×</button>
+                    <button
+                      type="button"
+                      className="tag-remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeSkill(s);
+                      }}
+                      aria-label={`Remove ${s}`}
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
                 <input
+                  id="skill-input"
                   type="text"
-                  placeholder="Type a skill and press Enter..."
+                  placeholder={form.skills.length === 0 ? "Type a skill (e.g., Python, React) and press Enter..." : "Add another skill..."}
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -143,41 +268,57 @@ export default function Profile() {
                       addSkill(skillInput);
                     }
                   }}
+                  disabled={saving}
                 />
               </div>
-              <div className="skill-suggestions">
-                {skillSuggestions
-                  .filter((s) => !form.skills.includes(s))
-                  .slice(0, 8)
-                  .map((s) => (
-                    <button
-                      type="button"
-                      key={s}
-                      className="skill-suggest-btn"
-                      onClick={() => addSkill(s)}
-                    >
-                      + {s}
-                    </button>
-                  ))}
+
+              {/* Suggestions */}
+              <div className="skill-suggestions-wrapper">
+                <span className="suggestion-hint">Suggested skills:</span>
+                <div className="skill-suggestions">
+                  {skillSuggestions
+                    .filter((s) => !form.skills.some((userSkill) => userSkill.toLowerCase() === s.toLowerCase()))
+                    .slice(0, 8)
+                    .map((s) => (
+                      <button
+                        type="button"
+                        key={s}
+                        className="skill-suggest-btn"
+                        onClick={() => addSkill(s)}
+                        disabled={saving}
+                      >
+                        + {s}
+                      </button>
+                    ))}
+                </div>
               </div>
             </div>
 
             {/* Interests */}
             <div className="form-group">
               <label className="form-label">
-                🎯 Interests
+                🎯 Interests <span className="required-star">*</span>
                 {errors.interests && <span className="form-error" style={{ marginLeft: 8 }}>{errors.interests}</span>}
               </label>
               <div className="check-grid">
-                {interestOptions.map((interest) => (
-                  <div
-                    key={interest}
-                    className={`check-option ${form.interests.includes(interest) ? 'selected' : ''}`}
-                    onClick={() => toggleInterest(interest)}
-                  >
-                    {interest}
-                  </div>
-                ))}
+                {interestOptions.map((interest) => {
+                  const isSelected = form.interests.includes(interest);
+                  return (
+                    <button
+                      type="button"
+                      key={interest}
+                      className={`check-option ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        toggleInterest(interest);
+                        if (errors.interests) setErrors({ ...errors, interests: null });
+                      }}
+                      disabled={saving}
+                    >
+                      <span className="check-box-indicator">{isSelected ? '✓' : ''}</span>
+                      <span>{interest}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -187,16 +328,35 @@ export default function Profile() {
               <textarea
                 className="form-textarea"
                 id="goal"
-                placeholder="e.g., I want to become a full-stack developer and work at a top startup..."
+                placeholder="e.g., I want to become a full-stack developer and land an internship at a top tech company..."
                 value={form.goal}
                 onChange={(e) => setForm({ ...form, goal: e.target.value })}
+                disabled={saving}
+                rows={3}
               />
             </div>
 
-            {/* Submit */}
+            {/* Actions */}
             <div className="profile-actions">
-              <button type="submit" className="btn btn-primary btn-lg" id="profile-submit">
-                Continue to Explore Domains →
+              <button
+                type="button"
+                className="btn btn-secondary btn-lg"
+                onClick={(e) => handleSubmit(e, false)}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : '💾 Save Profile'}
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg"
+                id="profile-submit"
+                disabled={saving}
+              >
+                {saving ? (
+                  <span className="btn-loading">Saving to MongoDB...</span>
+                ) : (
+                  <>Save & Continue to Domains →</>
+                )}
               </button>
             </div>
           </form>
@@ -205,3 +365,4 @@ export default function Profile() {
     </div>
   );
 }
+

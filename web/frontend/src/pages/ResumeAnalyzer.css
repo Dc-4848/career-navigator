@@ -1,0 +1,244 @@
+/* ── Resume Analyzer Styles ── */
+
+.resume-section {
+  padding: var(--space-3xl) 0 var(--space-4xl);
+}
+
+.resume-upload-card {
+  max-width: 760px;
+  margin: 0 auto var(--space-2xl);
+  padding: var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.dropzone {
+  width: 100%;
+  padding: var(--space-3xl) var(--space-xl);
+  border: 2px dashed var(--glass-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  background: rgba(255, 255, 255, 0.01);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-align: center;
+}
+
+.dropzone:hover, .dropzone.active {
+  border-color: var(--accent-teal);
+  background: var(--accent-teal-dim);
+  transform: scale(1.01);
+}
+
+.dropzone-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-xs);
+}
+
+.dropzone-hint {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.resume-error-msg {
+  color: var(--accent-rose);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  text-align: center;
+}
+
+.upload-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.analyzing-box {
+  max-width: 600px;
+  margin: 0 auto var(--space-2xl);
+  padding: var(--space-2xl);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  animation: fadeIn 0.4s ease;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--glass-border);
+  border-top-color: var(--accent-teal);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Results Section */
+.resume-results-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.results-overview-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xl);
+  padding: var(--space-2xl);
+  border: 1px solid rgba(0, 245, 196, 0.2);
+  background: linear-gradient(135deg, rgba(0, 245, 196, 0.04), rgba(124, 106, 255, 0.04));
+  flex-wrap: wrap;
+}
+
+.score-badge-circle {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 4px solid var(--accent-teal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 245, 196, 0.05);
+  box-shadow: 0 0 20px var(--accent-teal-glow);
+  flex-shrink: 0;
+}
+
+.score-number {
+  font-size: var(--fs-4xl);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.overview-summary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 280px;
+}
+
+.text-teal { color: var(--accent-teal); }
+.text-violet { color: var(--accent-violet); }
+.text-rose { color: var(--accent-rose); }
+
+.section-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-lg);
+}
+
+.result-subcard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detected-skills-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.empty-hint {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.recommended-domains-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.domain-rec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.domain-rec-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.rec-icon {
+  font-size: 1.5rem;
+}
+
+.rec-sub {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.feedback-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feedback-list li {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.bullet-teal { color: var(--accent-teal); font-weight: bold; }
+.bullet-rose { color: var(--accent-rose); font-weight: bold; }
+
+@media (max-width: 768px) {
+  .results-overview-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  .overview-summary {
+    align-items: center;
+  }
+  .section-pills {
+    justify-content: center;
+  }
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+}
