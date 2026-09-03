@@ -14,6 +14,8 @@ app.use('/auth', require('./routes/authRoutes'));
 app.use('/profile', require('./routes/profileRoutes'));
 app.use('/roadmap', require('./routes/roadmapRoutes'));
 app.use('/internships', require('./routes/internshipRoutes'));
+app.use('/ai', require('./routes/aiRoutes'));
+
 
 // Root Endpoint (Status check)
 app.get('/', (req, res) => {
@@ -76,6 +78,12 @@ const startServer = async () => {
       if (userCount === 0) {
         console.log('Seeding initial demonstration test users...');
         await User.create([
+          {
+            name: 'Elluri Dhanush Chandra',
+            email: 'dhanushelluri62@gmail.com',
+            password: 'onlydc@123',
+            role: 'user'
+          },
           {
             name: 'Demo Student',
             email: 'student@careernavigator.com',

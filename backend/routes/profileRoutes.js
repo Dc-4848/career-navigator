@@ -50,4 +50,27 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+const skillGapService = require('../services/ai/skillGapService');
+
+// Analyze Skill Gap for logged in user profile
+router.post('/analyze-gap', auth, async (req, res) => {
+  try {
+    const { targetRoleSkills, roleTitle } = req.body;
+    const profile = await Profile.findOne({ user: req.user });
+    const userSkills = profile ? profile.skills : (req.body.userSkills || []);
+
+    const gapAnalysis = await skillGapService.analyzeGap({
+      userSkills,
+      targetRoleSkills: Array.isArray(targetRoleSkills) ? targetRoleSkills : [],
+      roleTitle: roleTitle || 'Software Engineer'
+    });
+
+    res.json(gapAnalysis);
+  } catch (error) {
+    console.error('Skill Gap Route Error:', error);
+    res.status(500).json({ message: 'Unable to analyze skill gap. Please try again.' });
+  }
+});
+
 module.exports = router;
+

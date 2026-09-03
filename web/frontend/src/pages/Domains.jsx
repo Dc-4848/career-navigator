@@ -4,16 +4,29 @@ import { useAppState } from '../store/AppContext';
 import domains from '../data/domains';
 import './Domains.css';
 
+import api from '../api';
+
 export default function Domains() {
-  const { dispatch } = useAppState();
+  const { state, dispatch } = useAppState();
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState(null);
 
-  function selectDomain(domain) {
+  async function selectDomain(domain) {
     dispatch({ type: 'SET_DOMAIN', payload: domain });
     dispatch({ type: 'SET_STEP', payload: 3 });
+
+    // Persist selected domain to MongoDB profile
+    try {
+      if (state.token) {
+        await api.post('/profile', { selectedDomain: domain.id });
+      }
+    } catch (err) {
+      console.warn('Could not persist selected domain:', err);
+    }
+
     navigate('/roadmap');
   }
+
 
   function toggleExpand(id) {
     setExpandedId(expandedId === id ? null : id);

@@ -74,8 +74,12 @@ export default function Landing() {
   const completionPercentage = Math.round((completedCount / checklist.length) * 100);
   const missingItems = checklist.filter((item) => !item.completed);
 
-  // Determine active/recommended domain
-  const activeDomain = state.selectedDomain || (state.quizResult?.domain) || domains[0];
+  // Determine active/recommended domain safely (object or string ID)
+  const rawDomain = state.selectedDomain || (profile.selectedDomain) || (state.quizResult?.domain);
+  const activeDomain = typeof rawDomain === 'string'
+    ? (domains.find(d => d.id === rawDomain) || domains[0])
+    : (rawDomain || domains[0]);
+
   const userSkills = profile.skills || [];
 
   // Match calculations for active domain

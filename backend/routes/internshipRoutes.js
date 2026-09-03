@@ -57,4 +57,26 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+const jobMatchingService = require('../services/ai/jobMatchingService');
+
+// Calculate BGE-M3 Semantic Job Match Score
+router.post('/match', auth, async (req, res) => {
+  try {
+    const { userSkills, degree, year, jobTitle, jobRequiredSkills, jobDescription } = req.body;
+    const matchResult = await jobMatchingService.matchJob({
+      userSkills,
+      degree,
+      year,
+      jobTitle,
+      jobRequiredSkills,
+      jobDescription
+    });
+    res.json(matchResult);
+  } catch (error) {
+    console.error('Job Match Calculation Error:', error);
+    res.status(500).json({ message: 'Unable to calculate job match score. Please try again.' });
+  }
+});
+
 module.exports = router;
+

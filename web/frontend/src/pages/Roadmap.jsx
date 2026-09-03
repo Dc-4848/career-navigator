@@ -2,16 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../store/AppContext';
 import roadmapData from '../data/roadmap-data';
+import domains from '../data/domains';
 import api from '../api';
 import './Roadmap.css';
+
 
 export default function Roadmap() {
   const { state, dispatch } = useAppState();
   const navigate = useNavigate();
 
-  const domain = state.selectedDomain;
-  const domainId = domain ? domain.id : 'webdev';
+  const domain = state.selectedDomain || state.profile.selectedDomain;
+  const domainId = typeof domain === 'string' ? domain : (domain ? domain.id : 'webdev');
+  const activeDomainObj = typeof domain === 'object' && domain ? domain : (domains.find(d => d.id === domainId) || domains[0]);
   const defaultData = roadmapData[domainId] || roadmapData['webdev'];
+
 
   const [currentRoadmap, setCurrentRoadmap] = useState(defaultData);
   const [completedWeeks, setCompletedWeeks] = useState([]);

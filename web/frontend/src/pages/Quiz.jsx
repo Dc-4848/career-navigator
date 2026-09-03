@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../store/AppContext';
 import quizQuestions from '../data/quiz-questions';
 import { calculateQuizResult } from '../ai/quiz-engine';
+import api from '../api';
 import './Quiz.css';
 
 export default function Quiz() {
@@ -30,17 +31,29 @@ export default function Quiz() {
   };
 
   const finishQuiz = (finalAnswers) => {
+
     setIsFinished(true);
     setIsAnalyzing(true);
     
-    // Simulate AI thinking time
-    setTimeout(() => {
+    // Calculate AI quiz match
+    setTimeout(async () => {
       const result = calculateQuizResult(finalAnswers);
       dispatch({ type: 'SET_QUIZ_RESULT', payload: result });
       dispatch({ type: 'SET_DOMAIN', payload: result.domain });
+
+      // Persist top match to MongoDB profile
+      try {
+        if (state.token && result.domain) {
+          await api.post('/profile', { selectedDomain: result.domain.id });
+        }
+      } catch (err) {
+        console.warn('Could not persist quiz domain:', err);
+      }
+
       setIsAnalyzing(false);
-    }, 2000);
+    }, 1500);
   };
+
 
   const proceedToRoadmap = () => {
     navigate('/roadmap');

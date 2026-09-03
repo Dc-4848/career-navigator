@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../store/AppContext';
 import domains from '../data/domains';
+import api from '../api';
 import './SkillGap.css';
+
 
 // Precise role-to-skill mappings
 const roleSkills = {
@@ -159,15 +161,29 @@ export default function SkillGap() {
   const missingIntermediate = missingSkills.filter(s => getDifficulty(s) === 'Intermediate');
   const missingAdvanced = missingSkills.filter(s => getDifficulty(s) === 'Advanced');
 
-  // Save changes to profile state
-  const handleSaveToProfile = () => {
+  // Save changes to profile state & MongoDB
+
+  const handleSaveToProfile = async () => {
     dispatch({ type: 'SET_PROFILE', payload: { skills: tempSkills } });
     dispatch({ type: 'SET_DOMAIN', payload: selectedDomain });
+
+    try {
+      if (state.token) {
+        await api.post('/profile', {
+          skills: tempSkills,
+          selectedDomain: selectedDomain.id
+        });
+      }
+    } catch (err) {
+      console.warn('Could not persist profile skills from Skill Gap:', err);
+    }
+
     setShowSavedToast(true);
     setTimeout(() => {
       setShowSavedToast(false);
     }, 3000);
   };
+
 
   return (
     <div className="skillgap-container">
