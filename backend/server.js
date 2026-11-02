@@ -30,6 +30,7 @@ app.get('/', (req, res) => {
 const startServer = async () => {
   const mongoUri = process.env.MONGO_URI;
   const isProduction = process.env.NODE_ENV === 'production';
+  const explicitlyUseInMemory = process.env.USE_IN_MEMORY_DB === 'true';
 
   if (isProduction) {
     if (!mongoUri) {
@@ -39,37 +40,40 @@ const startServer = async () => {
     try {
       console.log('Connecting to MongoDB Atlas (Production)...');
       await mongoose.connect(mongoUri);
-      console.log('MongoDB Atlas Connected successfully');
+      console.log('MongoDB Atlas Connected successfully to database:', mongoose.connection.name);
     } catch (err) {
       console.error('FATAL: MongoDB Atlas Connection Error in production:', err);
       process.exit(1);
     }
+  } else if (explicitlyUseInMemory) {
+    // Local in-memory fallback ONLY when explicitly enabled via USE_IN_MEMORY_DB=true
+    try {
+      console.log('USE_IN_MEMORY_DB=true: Initializing Local In-Memory MongoDB...');
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      const mongoServer = await MongoMemoryServer.create();
+      const fallbackUri = mongoServer.getUri();
+      await mongoose.connect(fallbackUri);
+      console.log('Connected to Local In-Memory MongoDB (Development Mode)');
+    } catch (fallbackErr) {
+      console.error('In-memory database connection failed:', fallbackErr);
+      process.exit(1);
+    }
   } else {
-    // Development mode
-    let connected = false;
-    if (mongoUri) {
-      try {
-        console.log('Connecting to MongoDB Atlas...');
-        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 4000 });
-        console.log('MongoDB Atlas Connected successfully');
-        connected = true;
-      } catch (err) {
-        console.warn('MongoDB Atlas connection failed (' + err.message + ').');
-        console.warn('Falling back to in-memory database for local demonstration...');
-      }
+    // Default development mode: Connect to actual MongoDB Atlas cluster
+    if (!mongoUri) {
+      console.error('FATAL: MONGO_URI is missing in backend/.env');
+      process.exit(1);
     }
-
-    if (!connected) {
-      try {
-        const { MongoMemoryServer } = require('mongodb-memory-server');
-        const mongoServer = await MongoMemoryServer.create();
-        const fallbackUri = mongoServer.getUri();
-        await mongoose.connect(fallbackUri);
-        console.log('Connected to Local In-Memory MongoDB (Development & Demo Mode)');
-      } catch (fallbackErr) {
-        console.error('Database connection failed:', fallbackErr);
-      }
+    try {
+      console.log('Connecting to MongoDB Atlas (careernavigator)...');
+      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 8000 });
+      console.log('MongoDB Atlas Connected successfully to database:', mongoose.connection.name);
+    } catch (err) {
+      console.error('MongoDB Atlas Connection Error:', err.message);
+      console.error('Automatic in-memory fallback is disabled. Set USE_IN_MEMORY_DB=true in .env to use in-memory database.');
+      throw err;
     }
+  }
 
     // Seed test users if needed
     try {
@@ -102,7 +106,6 @@ const startServer = async () => {
     } catch (seedErr) {
       // Ignore seed error
     }
-  }
 };
 
 startServer();

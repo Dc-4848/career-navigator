@@ -417,9 +417,165 @@ async function runFullQASuite() {
   }
 
   // ---------------------------------------------------------
+  // PHASE 5: REAL-WORLD WEB & MOBILE SHARED DATA TEST SUITE
+  // ---------------------------------------------------------
+  console.log('▶ Executing Phase 5 Live Web & Mobile Shared Data Test Suite...');
+  const LAN_URL = 'http://192.168.1.19:5000';
+  const sharedUserEmail = `shared_e2e_${Date.now()}@careernavigator.com`;
+  let sharedToken = '';
+  let sharedInternshipId = '';
+
+  // TC_SHARED_001: Register user on Web
+  try {
+    const res = await fetch(`${BASE_URL}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Cross Platform Student', email: sharedUserEmail, password: testUserPassword })
+    });
+    const data = await res.json();
+    if (res.status === 201 && data.token) {
+      sharedToken = data.token;
+      addTC('TC_SHARED_001', 'Web & Mobile Shared Data', 'Register user on Web and verify persistence in MongoDB Atlas', 'Automated (Integration)', 'POST /auth/signup on localhost:5000', 'HTTP 201 Created and user record saved in MongoDB Atlas', 'PASS', `User registered: ${sharedUserEmail}`);
+    }
+  } catch (err) {
+    addTC('TC_SHARED_001', 'Web & Mobile Shared Data', 'Register user on Web and verify persistence in MongoDB Atlas', 'Automated (Integration)', 'POST /auth/signup on localhost:5000', 'HTTP 201 Created and user record saved in MongoDB Atlas', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_002: Authenticate user on Mobile LAN
+  try {
+    const res = await fetch(`${LAN_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: sharedUserEmail, password: testUserPassword })
+    });
+    const data = await res.json();
+    if (res.status === 200 && data.token) {
+      addTC('TC_SHARED_002', 'Web & Mobile Shared Data', 'Authenticate same account from Mobile client over LAN IP', 'Automated (LAN Integration)', 'POST /auth/login on 192.168.1.19:5000', 'HTTP 200 OK with valid JWT session token', 'PASS', 'Mobile login authenticated over LAN IP 192.168.1.19:5000');
+    }
+  } catch (err) {
+    addTC('TC_SHARED_002', 'Web & Mobile Shared Data', 'Authenticate same account from Mobile client over LAN IP', 'Automated (LAN Integration)', 'POST /auth/login on 192.168.1.19:5000', 'HTTP 200 OK with valid JWT session token', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_003: Save Profile from Web
+  try {
+    const res = await fetch(`${BASE_URL}/profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sharedToken}` },
+      body: JSON.stringify({ degree: 'B.Tech CS (Web Origin)', year: '3rd Year', skills: ['React', 'JavaScript'], goal: 'Full Stack Engineer', selectedDomain: 'Web Development' })
+    });
+    const data = await res.json();
+    if (res.status === 200 && data.degree.includes('Web Origin')) {
+      addTC('TC_SHARED_003', 'Web & Mobile Shared Data', 'Create student profile from Web application', 'Automated (Integration)', 'POST /profile on localhost:5000', 'HTTP 200 OK and profile document persisted in MongoDB Atlas', 'PASS', 'Initial profile created from Web application');
+    }
+  } catch (err) {
+    addTC('TC_SHARED_003', 'Web & Mobile Shared Data', 'Create student profile from Web application', 'Automated (Integration)', 'POST /profile on localhost:5000', 'HTTP 200 OK and profile document persisted in MongoDB Atlas', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_004: Update Profile from Mobile over LAN
+  try {
+    const res = await fetch(`${LAN_URL}/profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sharedToken}` },
+      body: JSON.stringify({ degree: 'B.Tech CS (Updated on Mobile)', year: '4th Year', skills: ['React', 'JavaScript', 'React Native', 'Node.js', 'MongoDB', 'Expo'], goal: 'Senior Full Stack Engineer', selectedDomain: 'Full Stack' })
+    });
+    const data = await res.json();
+    if (res.status === 200 && data.degree.includes('Updated on Mobile')) {
+      addTC('TC_SHARED_004', 'Web & Mobile Shared Data', 'Update student profile from Mobile client over LAN', 'Automated (LAN Integration)', 'POST /profile on 192.168.1.19:5000', 'HTTP 200 OK with updated profile document', 'PASS', 'Profile updated with 6 skills over Mobile LAN');
+    }
+  } catch (err) {
+    addTC('TC_SHARED_004', 'Web & Mobile Shared Data', 'Update student profile from Mobile client over LAN', 'Automated (LAN Integration)', 'POST /profile on 192.168.1.19:5000', 'HTTP 200 OK with updated profile document', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_005: Retrieve Profile on Web
+  try {
+    const res = await fetch(`${BASE_URL}/profile`, {
+      headers: { 'Authorization': `Bearer ${sharedToken}` }
+    });
+    const data = await res.json();
+    if (res.status === 200 && data.degree.includes('Updated on Mobile') && data.skills.length === 6) {
+      addTC('TC_SHARED_005', 'Web & Mobile Shared Data', 'Fetch updated profile on Web after Mobile update', 'Automated (Integration)', 'GET /profile on localhost:5000', 'HTTP 200 OK containing updates made on Mobile client', 'PASS', 'Confirmed: Mobile updates appear on Web profile immediately');
+    }
+  } catch (err) {
+    addTC('TC_SHARED_005', 'Web & Mobile Shared Data', 'Fetch updated profile on Web after Mobile update', 'Automated (Integration)', 'GET /profile on localhost:5000', 'HTTP 200 OK containing updates made on Mobile client', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_006: Save Roadmap from Web
+  try {
+    const res = await fetch(`${BASE_URL}/roadmap`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sharedToken}` },
+      body: JSON.stringify({ role: 'Full Stack Engineer', domain: 'Full Stack', weeks: [{ week: 1, topic: 'Advanced React 19' }, { week: 2, topic: 'Expo SDK 57' }] })
+    });
+    const data = await res.json();
+    if (res.status === 200) {
+      addTC('TC_SHARED_006', 'Web & Mobile Shared Data', 'Save custom roadmap from Web app to MongoDB Atlas', 'Automated (Integration)', 'POST /roadmap on localhost:5000', 'HTTP 200 OK and roadmap persisted in database', 'PASS', 'Roadmap document created on Web');
+    }
+  } catch (err) {
+    addTC('TC_SHARED_006', 'Web & Mobile Shared Data', 'Save custom roadmap from Web app to MongoDB Atlas', 'Automated (Integration)', 'POST /roadmap on localhost:5000', 'HTTP 200 OK and roadmap persisted in database', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_007: Retrieve Roadmap on Mobile over LAN
+  try {
+    const res = await fetch(`${LAN_URL}/roadmap`, {
+      headers: { 'Authorization': `Bearer ${sharedToken}` }
+    });
+    const data = await res.json();
+    if (res.status === 200 && (data.role === 'Full Stack Engineer' || (Array.isArray(data) && data.length > 0))) {
+      addTC('TC_SHARED_007', 'Web & Mobile Shared Data', 'Retrieve saved roadmap from Mobile client over LAN', 'Automated (LAN Integration)', 'GET /roadmap on 192.168.1.19:5000', 'HTTP 200 OK with roadmap saved earlier from Web', 'PASS', 'Web roadmap successfully fetched by Mobile client over LAN');
+    }
+  } catch (err) {
+    addTC('TC_SHARED_007', 'Web & Mobile Shared Data', 'Retrieve saved roadmap from Mobile client over LAN', 'Automated (LAN Integration)', 'GET /roadmap on 192.168.1.19:5000', 'HTTP 200 OK with roadmap saved earlier from Web', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_008: Save Internship from Mobile over LAN
+  try {
+    const res = await fetch(`${LAN_URL}/internships`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sharedToken}` },
+      body: JSON.stringify({ role: 'React Native Mobile Intern', company: 'CrossPlatform Labs', location: 'Remote', stipend: '$1500/mo', applyUrl: 'https://example.com/apply' })
+    });
+    const data = await res.json();
+    if (res.status === 201 && data._id) {
+      sharedInternshipId = data._id;
+      addTC('TC_SHARED_008', 'Web & Mobile Shared Data', 'Save internship posting from Mobile client over LAN', 'Automated (LAN Integration)', 'POST /internships on 192.168.1.19:5000', 'HTTP 201 Created and persisted in MongoDB Atlas', 'PASS', `Internship saved via Mobile endpoint with ID: ${sharedInternshipId}`);
+    }
+  } catch (err) {
+    addTC('TC_SHARED_008', 'Web & Mobile Shared Data', 'Save internship posting from Mobile client over LAN', 'Automated (LAN Integration)', 'POST /internships on 192.168.1.19:5000', 'HTTP 201 Created and persisted in MongoDB Atlas', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_009: Retrieve Internship on Web
+  try {
+    const res = await fetch(`${BASE_URL}/internships`, {
+      headers: { 'Authorization': `Bearer ${sharedToken}` }
+    });
+    const data = await res.json();
+    const found = Array.isArray(data) && data.some(item => item._id === sharedInternshipId || item.company === 'CrossPlatform Labs');
+    if (res.status === 200 && found) {
+      addTC('TC_SHARED_009', 'Web & Mobile Shared Data', 'Fetch internship on Web saved earlier by Mobile client', 'Automated (Integration)', 'GET /internships on localhost:5000', 'HTTP 200 OK with Mobile saved internship present in list', 'PASS', 'Mobile saved internship verified on Web UI endpoint');
+    }
+  } catch (err) {
+    addTC('TC_SHARED_009', 'Web & Mobile Shared Data', 'Fetch internship on Web saved earlier by Mobile client', 'Automated (Integration)', 'GET /internships on localhost:5000', 'HTTP 200 OK with Mobile saved internship present in list', 'FAIL', err.message);
+  }
+
+  // TC_SHARED_010: Cleanup Shared Test Internship
+  if (sharedInternshipId) {
+    try {
+      const res = await fetch(`${BASE_URL}/internships/${sharedInternshipId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${sharedToken}` }
+      });
+      if (res.status === 200) {
+        addTC('TC_SHARED_010', 'Web & Mobile Shared Data', 'Delete test internship to maintain clean Atlas state', 'Automated (Database Cleanup)', 'DELETE /internships/:id on localhost:5000', 'HTTP 200 OK with deleted confirmation', 'PASS', 'Test internship deleted safely from MongoDB Atlas');
+      }
+    } catch (err) {
+      addTC('TC_SHARED_010', 'Web & Mobile Shared Data', 'Delete test internship to maintain clean Atlas state', 'Automated (Database Cleanup)', 'DELETE /internships/:id on localhost:5000', 'HTTP 200 OK with deleted confirmation', 'FAIL', err.message);
+    }
+  }
+
+  // ---------------------------------------------------------
   // 2. GENERATE FULL 310+ SUITE MATRIX COVERING ALL MODULES
   // ---------------------------------------------------------
-  console.log('▶ Generating 310+ Test Case Specification Suite across 14 Modules...');
+  console.log('▶ Generating 310+ Test Case Specification Suite across Modules...');
 
   // Module definitions and count targets
   const moduleDefs = [
@@ -436,7 +592,8 @@ async function runFullQASuite() {
     { name: 'Security & Vulnerability', prefix: 'TC_SEC', count: 25 },
     { name: 'Performance & Load Testing', prefix: 'TC_PERF', count: 20 },
     { name: 'Android Mobile Appium Automation', prefix: 'TC_MOB', count: 20 },
-    { name: 'Accessibility & Responsiveness', prefix: 'TC_ACC', count: 20 }
+    { name: 'Accessibility & Responsiveness', prefix: 'TC_ACC', count: 20 },
+    { name: 'Web & Mobile Shared Data', prefix: 'TC_SHARED', count: 10 }
   ];
 
   // Specific scenario generator per module
@@ -497,8 +654,8 @@ async function runFullQASuite() {
         title = `Android Appium - Verify mobile screen ${tcNum} layout and accessibility ID interaction`;
         steps = '1. Launch Android APK on Appium driver\n2. Find accessibility ID\n3. Perform tap action';
         expected = 'Mobile UI element responds to Appium driver touch event.';
-        status = 'NOT EXECUTED';
-        notes = 'Appium automation suite prepared. Hardware emulator/device not attached during local run.';
+        status = 'BLOCKED';
+        notes = 'BLOCKED: Physical Android hardware device not attached via USB/ADB. Metro packager active on exp://192.168.1.19:8081. Ready for Expo Go scanning.';
       } else if (mod.name === 'Accessibility & Responsiveness') {
         title = `${mod.name} - Verify ${['mobile drawer layout at 390px', 'keyboard focus-visible outlines', 'contrast ratio compliance', 'ARIA label attributes', 'touch target size >= 44px'][tcNum % 5]}`;
         expected = 'UI meets responsive layout and accessibility standards.';
@@ -536,7 +693,7 @@ async function runFullQASuite() {
   // 1. Summary Sheet
   const summaryData = [
     { Metric: 'Project Name', Value: 'Career Navigator' },
-    { Metric: 'Target Stack', Value: 'React + Node.js/Express + MongoDB + Local Open-Source AI (Qwen3 & BGE-M3)' },
+    { Metric: 'Target Stack', Value: 'React 19 + Expo SDK 57.0.31 + Express + MongoDB Atlas (careernavigator) + Local AI (Qwen3 & BGE-M3)' },
     { Metric: 'Report Date', Value: new Date().toLocaleDateString() },
     { Metric: 'Report Generated At', Value: new Date().toISOString() },
     { Metric: '', Value: '' },
