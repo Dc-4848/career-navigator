@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+// Defaults to localhost:5000 in local development, or configured Render/production endpoint
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? 'https://career-navigator-2cwd.onrender.com' : 'http://localhost:5000'),
 });
 
 // Request interceptor to add the JWT token to headers
