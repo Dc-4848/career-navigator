@@ -7,25 +7,76 @@ on:
 permissions:
   contents: read
   security-events: write
+
 jobs:
   selenium:
     name: Selenium Web E2E
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-          cache-dependency-path: web/frontend/package-lock.json
+          cache-dependency-path: |
+            backend/package-lock.json
+            web/frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Start isolated test backend
+        working-directory: backend
+        env:
+          PORT: 5000
+          NODE_ENV: test
+          MONGO_URI: mongodb://127.0.0.1:27017/career_navigator_selenium
+          JWT_SECRET: ci-only-not-a-production-secret
+        run: |
+          node server.js > /tmp/backend.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:5000/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/backend.log
+          exit 1
+      - name: Create disposable E2E account
+        run: |
+          EMAIL="e2e-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}@example.test"
+          PASSWORD="CI-Test-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-A9!"
+          curl --fail-with-body -fsS -X POST http://127.0.0.1:5000/auth/signup \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"Career Navigator CI\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}"
+          echo "E2E_EMAIL=$EMAIL" >> "$GITHUB_ENV"
+          echo "E2E_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
       - name: Install web dependencies
         working-directory: web/frontend
         run: npm ci
       - name: Start web frontend
         working-directory: web/frontend
+        env:
+          VITE_API_BASE_URL: http://127.0.0.1:5000
         run: npm run dev -- --host 0.0.0.0 > /tmp/web.log 2>&1 &
       - name: Wait for frontend
-        run: npx --yes wait-on http://127.0.0.1:5173
+        run: |
+          for i in {1..45}; do
+            if curl -fsS http://127.0.0.1:5173/login >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/web.log
+          exit 1
       - name: Install Python report dependency
         run: python -m pip install openpyxl
       - name: Install Selenium test dependencies
@@ -35,10 +86,12 @@ jobs:
         working-directory: selenium-tests
         env:
           WEB_BASE_URL: http://127.0.0.1:5173
-          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
-          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          E2E_EMAIL: ${{ env.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ env.E2E_PASSWORD }}
+          LOGIN_SUCCESS_SELECTOR: "form#profile-form"
         run: npx mocha tests/login-tests.js --reporter spec
       - name: Generate Selenium Excel test plan
+        if: always()
         run: python scripts/generate-test-plans.py
       - uses: actions/upload-artifact@v4
         if: always()
@@ -49,42 +102,77 @@ jobs:
   appium:
     name: Appium Android E2E
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
       - name: Install Python report dependency
         run: python -m pip install openpyxl
-      - name: Install Appium and driver
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Start isolated test backend
+        working-directory: backend
+        env:
+          PORT: 5000
+          NODE_ENV: test
+          MONGO_URI: mongodb://127.0.0.1:27017/career_navigator_appium
+          JWT_SECRET: ci-only-not-a-production-secret
+        run: |
+          node server.js > /tmp/backend.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:5000/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/backend.log
+          exit 1
+      - name: Create disposable E2E account
+        run: |
+          EMAIL="mobile-e2e-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}@example.test"
+          PASSWORD="CI-Mobile-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-B8!"
+          curl --fail-with-body -fsS -X POST http://127.0.0.1:5000/auth/signup \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"Career Navigator Mobile CI\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}"
+          echo "E2E_EMAIL=$EMAIL" >> "$GITHUB_ENV"
+          echo "E2E_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+      - name: Install Appium and test dependencies
         run: |
           npm install -g appium
           appium driver install uiautomator2
           cd appium-tests && npm install
-      - name: Run build and Appium tests on Android emulator
+      - name: Build and test on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          E2E_EMAIL: ${{ env.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ env.E2E_PASSWORD }}
         with:
           api-level: 35
           arch: x86_64
           profile: pixel_6
           script: |
-            cd mobile/frontend
-            npm install
-            npx expo prebuild --platform android --non-interactive
-            cd android
-            ./gradlew assembleDebug
-            cd ../../..
-            adb install mobile/frontend/android/app/build/outputs/apk/debug/app-debug.apk
-            appium --address 127.0.0.1 --port 4723 > /tmp/appium.log 2>&1 &
+            set -e
+            cd mobile/frontend && npm install && npx expo prebuild --platform android --non-interactive && cd android && EXPO_PUBLIC_API_URL=http://127.0.0.1:5000 ./gradlew assembleDebug && cd ../../.. && adb reverse tcp:5000 tcp:5000 && adb install mobile/frontend/android/app/build/outputs/apk/debug/app-debug.apk && appium --address 127.0.0.1 --port 4723 > /tmp/appium.log 2>&1 & 
             cd appium-tests
-            APP_PACKAGE="${{ vars.APP_PACKAGE || 'com.careernavigator.app' }}" APP_ACTIVITY="${{ vars.APP_ACTIVITY || 'com.careernavigator.app.MainActivity' }}" npx mocha tests/app-e2e-tests.js --reporter spec
+            for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4723/status >/dev/null && break; sleep 2; done
+            E2E_EMAIL="$E2E_EMAIL" E2E_PASSWORD="$E2E_PASSWORD" APP_PACKAGE="com.careernavigator.app" APP_ACTIVITY="com.careernavigator.app.MainActivity" npx mocha tests/app-e2e-tests.js --reporter spec
       - name: Generate Appium Excel test plan
         if: always()
         run: python scripts/generate-test-plans.py
@@ -100,21 +188,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: grafana/setup-k6-action@v1
-      - name: Run baseline load test
+      - name: Run 100-user baseline against Career Navigator API
         env:
-          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL || 'https://career-navigator-2cwd.onrender.com' }}
           HEALTH_PATH: ${{ vars.HEALTH_PATH || '/health' }}
         run: |
-          if [ -z "$API_BASE_URL" ]; then
-            echo "API_BASE_URL is not configured. Skipping k6 load test; configure the repository variable to enable it."
-            exit 0
-          fi
+          mkdir -p load-tests
+          echo "Target: $API_BASE_URL$HEALTH_PATH"
+          for i in {1..45}; do
+            if curl -fsS "$API_BASE_URL$HEALTH_PATH" >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail-with-body -fsS "$API_BASE_URL$HEALTH_PATH" >/dev/null
           k6 run --summary-export=load-tests/summary.json load-tests/k6-baseline.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: k6-load-test-results
           path: load-tests/summary.json
+          if-no-files-found: warn
 
   security:
     name: Backend Discovery, SAST and Dependency Scanning
@@ -150,7 +242,7 @@ jobs:
         uses: actions/dependency-review-action@v4
       - name: Optional safe DAST
         env:
-          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL || 'https://career-navigator-2cwd.onrender.com' }}
           DAST_AUTHORIZED: ${{ vars.DAST_AUTHORIZED }}
         run: python security/scripts/safe-dast.py
       - name: Generate security reports and Excel workbooks
