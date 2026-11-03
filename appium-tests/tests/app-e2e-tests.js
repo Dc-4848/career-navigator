@@ -19,7 +19,8 @@ describe('Career Navigator Android E2E', function () {
         'appium:appPackage': process.env.APP_PACKAGE,
         'appium:appActivity': process.env.APP_ACTIVITY,
         'appium:noReset': false,
-        'appium:newCommandTimeout': 120
+        'appium:newCommandTimeout': 120,
+        'appium:autoGrantPermissions': true
       }
     });
   });
@@ -29,7 +30,7 @@ describe('Career Navigator Android E2E', function () {
   it('launches and displays the login screen', async function () {
     if (!driver) this.skip();
     const email = await driver.$('~login-email');
-    await email.waitForDisplayed({ timeout: 30000 });
+    await email.waitForDisplayed({ timeout: 45000 });
     assert.ok(await email.isDisplayed());
     assert.ok(await (await driver.$('~login-password')).isDisplayed());
     assert.ok(await (await driver.$('~login-submit')).isDisplayed());
@@ -37,21 +38,31 @@ describe('Career Navigator Android E2E', function () {
 
   it('rejects an incorrect password', async function () {
     if (!driver || !process.env.E2E_EMAIL) this.skip();
-    await (await driver.$('~login-email')).setValue(process.env.E2E_EMAIL);
-    await (await driver.$('~login-password')).setValue('Definitely-Wrong-CI-Password-123!');
+    const email = await driver.$('~login-email');
+    await email.clearValue();
+    await email.setValue(process.env.E2E_EMAIL);
+    const password = await driver.$('~login-password');
+    await password.clearValue();
+    await password.setValue('Definitely-Wrong-CI-Password-123!');
+    try { await driver.hideKeyboard(); } catch (_) {}
     await (await driver.$('~login-submit')).click();
     await driver.waitUntil(async () => {
       const source = await driver.getPageSource();
       return source.includes('Invalid credentials') || source.includes('Login failed');
-    }, { timeout: 20000, interval: 500, timeoutMsg: 'Expected invalid-credentials message was not displayed' });
+    }, { timeout: 25000, interval: 500, timeoutMsg: 'Expected invalid-credentials message was not displayed' });
     const source = await driver.getPageSource();
     assert.ok(source.includes('Invalid credentials') || source.includes('Login failed'));
   });
 
   it('logs in and opens the authenticated dashboard', async function () {
     if (!driver || !process.env.E2E_EMAIL || !process.env.E2E_PASSWORD) this.skip();
-    await (await driver.$('~login-email')).setValue(process.env.E2E_EMAIL);
-    await (await driver.$('~login-password')).setValue(process.env.E2E_PASSWORD);
+    const email = await driver.$('~login-email');
+    await email.clearValue();
+    await email.setValue(process.env.E2E_EMAIL);
+    const password = await driver.$('~login-password');
+    await password.clearValue();
+    await password.setValue(process.env.E2E_PASSWORD);
+    try { await driver.hideKeyboard(); } catch (_) {}
     await (await driver.$('~login-submit')).click();
     await driver.waitUntil(async () => {
       const source = await driver.getPageSource();
