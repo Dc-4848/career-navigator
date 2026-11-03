@@ -1,0 +1,165 @@
+name: Career Navigator - E2E, Load and Security
+on:
+  push:
+    branches: [main, develop, "automation/**"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  selenium:
+    name: Selenium Web E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/frontend/package-lock.json
+      - name: Install web dependencies
+        working-directory: web/frontend
+        run: npm ci
+      - name: Start web frontend
+        working-directory: web/frontend
+        run: npm run dev -- --host 0.0.0.0 > /tmp/web.log 2>&1 &
+      - name: Wait for frontend
+        run: npx --yes wait-on http://127.0.0.1:5173
+      - name: Install Selenium test dependencies
+        working-directory: selenium-tests
+        run: npm install
+      - name: Run Selenium tests
+        working-directory: selenium-tests
+        env:
+          WEB_BASE_URL: http://127.0.0.1:5173
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: npx mocha tests/login-tests.js --reporter spec
+      - name: Generate Selenium Excel test plan
+        run: python scripts/generate-test-plans.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selenium-test-excel
+          path: selenium-tests/selenium-test-cases.xlsx
+
+  appium:
+    name: Appium Android E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Install Appium and driver
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+          cd appium-tests && npm install
+      - name: Build Android app
+        working-directory: mobile/frontend
+        run: |
+          npm ci
+          npx expo prebuild --platform android --non-interactive
+          cd android && ./gradlew assembleDebug
+      - name: Run Appium on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            adb install mobile/frontend/android/app/build/outputs/apk/debug/app-debug.apk
+            appium --address 127.0.0.1 --port 4723 > /tmp/appium.log 2>&1 &
+            cd appium-tests
+            APP_PACKAGE="${{ vars.APP_PACKAGE }}" APP_ACTIVITY="${{ vars.APP_ACTIVITY }}" npx mocha tests/app-e2e-tests.js --reporter spec
+      - name: Generate Appium Excel test plan
+        if: always()
+        run: python scripts/generate-test-plans.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: appium-test-excel
+          path: appium-tests/appium-test-cases.xlsx
+
+  load-test:
+    name: k6 Baseline - 100 VUs / 1 minute
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - name: Run baseline load test
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          HEALTH_PATH: ${{ vars.HEALTH_PATH || '/health' }}
+        run: |
+          if [ -z "$API_BASE_URL" ]; then echo "Set API_BASE_URL repository variable"; exit 1; fi
+          k6 run --summary-export=load-tests/summary.json load-tests/k6-baseline.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-load-test-results
+          path: load-tests/summary.json
+
+  security:
+    name: Backend Discovery, SAST and Dependency Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install openpyxl requests
+      - name: Discover backend and API route candidates
+        run: python security/scripts/discover.py
+      - name: Semgrep SAST
+        continue-on-error: true
+        run: semgrep scan --config auto --json --output "Vulnerability Test Results/semgrep.json" .
+      - name: Trivy filesystem and dependency scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: "Vulnerability Test Results/trivy.json"
+          exit-code: "0"
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+      - name: Gitleaks secret scan
+        continue-on-error: true
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Dependency Review on pull requests
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/dependency-review-action@v4
+      - name: Optional safe DAST
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          DAST_AUTHORIZED: ${{ vars.DAST_AUTHORIZED }}
+        run: python security/scripts/safe-dast.py
+      - name: Generate security reports and Excel workbooks
+        if: always()
+        run: python security/scripts/generate_reports.py
+      - name: Fail only for Critical Trivy vulnerabilities
+        if: always()
+        run: python security/scripts/critical-gate.py
+      - name: Publish Actions summary
+        if: always()
+        run: |
+          echo "## Security review" >> "$GITHUB_STEP_SUMMARY"
+          cat "Vulnerability Test Results/executive-summary.md" >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-review-reports
+          path: Vulnerability Test Results/
