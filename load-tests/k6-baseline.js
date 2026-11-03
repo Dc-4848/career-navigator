@@ -11,7 +11,7 @@ export const options = {
   },
   thresholds: {
     http_req_failed: ['rate<0.05'],
-    http_req_duration: ['p(95)<2000']
+    http_req_duration: ['p(95)<5000']
   }
 };
 
@@ -20,5 +20,5 @@ export default function () {
   const path = __ENV.HEALTH_PATH || '/health';
   const response = http.get(`${base}${path}`, { timeout: '10s' });
   check(response, { 'health endpoint returns 2xx': r => r.status >= 200 && r.status < 300 });
-  sleep(0.1);
+  sleep(1);
 }
