@@ -34,6 +34,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install Python report dependency
+        run: python -m pip install openpyxl
       - name: Install backend dependencies
         working-directory: backend
         run: npm ci
@@ -56,7 +58,7 @@ jobs:
         run: |
           EMAIL="e2e-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}@example.test"
           PASSWORD="CI-Test-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-A9!"
-          curl --fail-with-body -fsS -X POST http://127.0.0.1:5000/auth/signup \
+          curl --fail-with-body -sS -X POST http://127.0.0.1:5000/auth/signup \
             -H "Content-Type: application/json" \
             -d "{\"name\":\"Career Navigator CI\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}"
           echo "E2E_EMAIL=$EMAIL" >> "$GITHUB_ENV"
@@ -77,8 +79,6 @@ jobs:
           done
           cat /tmp/web.log
           exit 1
-      - name: Install Python report dependency
-        run: python -m pip install openpyxl
       - name: Install Selenium test dependencies
         working-directory: selenium-tests
         run: npm install
@@ -139,7 +139,7 @@ jobs:
         run: |
           node server.js > /tmp/backend.log 2>&1 &
           for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:5000/health >/dev/null; then exit 0; fi
+            if curl -fsS http://127.0.0.1:5000/health | grep -q '"database":"connected"'; then exit 0; fi
             sleep 2
           done
           cat /tmp/backend.log
@@ -148,7 +148,7 @@ jobs:
         run: |
           EMAIL="mobile-e2e-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}@example.test"
           PASSWORD="CI-Mobile-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-B8!"
-          curl --fail-with-body -fsS -X POST http://127.0.0.1:5000/auth/signup \
+          curl --fail-with-body -sS -X POST http://127.0.0.1:5000/auth/signup \
             -H "Content-Type: application/json" \
             -d "{\"name\":\"Career Navigator Mobile CI\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}"
           echo "E2E_EMAIL=$EMAIL" >> "$GITHUB_ENV"
