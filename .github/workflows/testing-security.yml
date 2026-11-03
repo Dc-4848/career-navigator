@@ -187,7 +187,7 @@ jobs:
       - name: Run 100-user baseline against Career Navigator API
         env:
           API_BASE_URL: ${{ vars.API_BASE_URL || 'https://career-navigator-2cwd.onrender.com' }}
-          HEALTH_PATH: ${{ vars.HEALTH_PATH || '/health' }}
+          HEALTH_PATH: ${{ vars.HEALTH_PATH || '/' }}
         run: |
           mkdir -p load-tests
           echo "Target: $API_BASE_URL$HEALTH_PATH"
@@ -195,7 +195,7 @@ jobs:
             if curl -fsS "$API_BASE_URL$HEALTH_PATH" >/dev/null; then break; fi
             sleep 2
           done
-          curl --fail-with-body -fsS "$API_BASE_URL$HEALTH_PATH" >/dev/null
+          curl --fail-with-body -sS "$API_BASE_URL$HEALTH_PATH" >/dev/null
           k6 run --summary-export=load-tests/summary.json load-tests/k6-baseline.js
       - uses: actions/upload-artifact@v4
         if: always()
