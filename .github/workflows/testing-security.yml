@@ -168,11 +168,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           script: |
-            set -e
-            cd mobile/frontend && npm install && npx expo prebuild --platform android --non-interactive && cd android && EXPO_PUBLIC_API_URL=http://127.0.0.1:5000 ./gradlew assembleDebug && cd ../../.. && adb reverse tcp:5000 tcp:5000 && adb install mobile/frontend/android/app/build/outputs/apk/debug/app-debug.apk && appium --address 127.0.0.1 --port 4723 > /tmp/appium.log 2>&1 & 
-            cd appium-tests
-            for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4723/status >/dev/null && break; sleep 2; done
-            E2E_EMAIL="$E2E_EMAIL" E2E_PASSWORD="$E2E_PASSWORD" APP_PACKAGE="com.careernavigator.app" APP_ACTIVITY="com.careernavigator.app.MainActivity" npx mocha tests/app-e2e-tests.js --reporter spec
+            set -e; cd mobile/frontend; npm install; npx expo prebuild --platform android --non-interactive; cd android; EXPO_PUBLIC_API_URL=http://127.0.0.1:5000 ./gradlew assembleDebug; cd ../../..; adb reverse tcp:5000 tcp:5000; adb install mobile/frontend/android/app/build/outputs/apk/debug/app-debug.apk; appium --address 127.0.0.1 --port 4723 > /tmp/appium.log 2>&1 & APP_PID=$!; cd appium-tests; for i in $(seq 1 30); do if curl -fsS http://127.0.0.1:4723/status >/dev/null; then break; fi; sleep 2; done; E2E_EMAIL="$E2E_EMAIL" E2E_PASSWORD="$E2E_PASSWORD" APP_PACKAGE="com.careernavigator.app" APP_ACTIVITY="com.careernavigator.app.MainActivity" npx mocha tests/app-e2e-tests.js --reporter spec
       - name: Generate Appium Excel test plan
         if: always()
         run: python scripts/generate-test-plans.py
