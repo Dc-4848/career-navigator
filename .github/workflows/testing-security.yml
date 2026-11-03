@@ -76,7 +76,7 @@ jobs:
           profile: pixel_6
           script: |
             cd mobile/frontend
-            npm ci
+            npm install
             npx expo prebuild --platform android --non-interactive
             cd android
             ./gradlew assembleDebug
