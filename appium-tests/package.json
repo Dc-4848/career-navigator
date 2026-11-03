@@ -1,0 +1,6 @@
+{
+  "name": "career-navigator-appium-tests",
+  "private": true,
+  "scripts": { "test": "mocha tests/app-e2e-tests.js --timeout 120000" },
+  "devDependencies": { "mocha": "^10.8.2", "webdriverio": "^9.5.2" }
+}
