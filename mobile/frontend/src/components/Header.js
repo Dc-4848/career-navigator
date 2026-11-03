@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useMobileApp } from '../context/MobileAppContext';
 
@@ -12,11 +13,11 @@ export default function Header({ title, showBack, onBack, rightAction }) {
       <View style={styles.leftContainer}>
         {showBack ? (
           <TouchableOpacity style={styles.backBtn} onPress={onBack} accessibilityLabel="Back">
-            <Text style={styles.backText}>←</Text>
+            <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
         ) : (
           <View style={styles.logoIcon}>
-            <Text style={styles.logoEmoji}>🧭</Text>
+            <Ionicons name="compass-outline" size={20} color="#38BDF8" />
           </View>
         )}
         <Text style={styles.titleText}>{title || 'Career Navigator'}</Text>

@@ -35,9 +35,9 @@
   background: var(--surface);
   border: 1px solid var(--border);
   padding: 0.6rem 1.2rem;
-  border-radius: 20px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -77,14 +77,14 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, var(--teal-400), var(--violet-400));
+  height: 3px;
+  background: var(--accent-primary);
 }
 
 .hackathon-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1);
-  border-top-color: var(--violet-500);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-top-color: var(--accent-primary);
 }
 
 .card-header {
@@ -123,12 +123,12 @@
 }
 
 .save-btn:hover {
-  color: var(--violet-400);
-  transform: scale(1.1);
+  color: var(--accent-primary);
+  transform: scale(1.05);
 }
 
 .save-btn.saved {
-  color: var(--violet-500);
+  color: var(--accent-primary);
 }
 
 .card-details {

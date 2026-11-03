@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { AlertCircle, FlaskConical } from 'lucide-react';
 import { useAppState } from '../store/AppContext';
 import api from '../api';
 import './Auth.css';
@@ -57,8 +58,8 @@ export default function Login() {
 
           {/* Error Message */}
           {error && (
-            <div className="auth-error">
-              <span className="auth-error-icon">⚠</span>
+            <div className="auth-error" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertCircle size={15} color="var(--accent-rose)" />
               <span>{error}</span>
             </div>
           )}
@@ -144,8 +145,8 @@ export default function Login() {
 
           {/* Test Credentials */}
           <div className="auth-test-creds">
-            <button type="button" onClick={fillTestCredentials} className="auth-test-btn">
-              <span className="auth-test-icon">🧪</span>
+            <button type="button" onClick={fillTestCredentials} className="auth-test-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <FlaskConical size={14} />
               Fill Test Credentials
             </button>
           </div>

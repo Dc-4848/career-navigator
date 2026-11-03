@@ -1,311 +1,617 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Briefcase,
+  Search,
+  ClipboardList,
+  Target,
+  MapPin,
+  DollarSign,
+  Clock,
+  Bookmark,
+  BookmarkCheck,
+  FileText,
+  ExternalLink,
+  Building2,
+  Plus,
+  Trash2
+} from 'lucide-react';
 import { useAppState } from '../store/AppContext';
-import internshipRoles from '../data/internship-roles';
 import domains from '../data/domains';
+import internshipRoles from '../data/internship-roles';
 import api from '../api';
 import './Internships.css';
 
+const WORKPLACE_OPTIONS = ['All', 'Remote', 'Hybrid', 'On-site'];
+const JOB_TYPE_OPTIONS = ['All', 'Internship', 'Fresher Job', 'Entry-Level Job', 'Off-Campus'];
+const APP_STATUSES = ['Saved', 'Applied', 'Assessment', 'Interview', 'Offered', 'Rejected'];
+
 export default function Internships() {
   const { state, dispatch } = useAppState();
-  const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestedRoles, setSuggestedRoles] = useState([]);
-  const [savedItems, setSavedItems] = useState(state.savedInternships || []);
-  const [filter, setFilter] = useState('All');
+  const [activeTab, setActiveTab] = useState('opportunities'); // 'opportunities', 'tracker', 'matcher'
+  
+  // Opportunities state
+  const [opportunities, setOpportunities] = useState([]);
+  const [loadingOpps, setLoadingOpps] = useState(true);
+  const [oppSearch, setOppSearch] = useState('');
+  const [workplaceFilter, setWorkplaceFilter] = useState('All');
+  const [jobTypeFilter, setJobTypeFilter] = useState('All');
+  const [savedOppIds, setSavedOppIds] = useState(new Set());
+
+  // Application tracker state
+  const [applications, setApplications] = useState([]);
+  const [loadingApps, setLoadingApps] = useState(false);
+  const [appStatusFilter, setAppStatusFilter] = useState('All');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalCompany, setModalCompany] = useState('');
+  const [modalStatus, setModalStatus] = useState('Applied');
+  const [modalDeadline, setModalDeadline] = useState('');
+  const [modalNotes, setModalNotes] = useState('');
+  const [savingApp, setSavingApp] = useState(false);
+
+  // Matcher state (legacy/existing)
   const [activeDomainId, setActiveDomainId] = useState(state.selectedDomain ? state.selectedDomain.id : domains[0].id);
+  const [matcherSearch, setMatcherSearch] = useState('');
+  const [matcherFilter, setMatcherFilter] = useState('All');
 
-  const activeDomain = domains.find(d => d.id === activeDomainId) || domains[0];
   const userSkills = state.profile?.skills || [];
+  const activeDomain = domains.find(d => d.id === activeDomainId) || domains[0];
 
-  // Load saved internships from backend
   useEffect(() => {
-    let isMounted = true;
-    api.get('/internships')
-      .then((res) => {
-        if (isMounted && Array.isArray(res.data)) {
-          setSavedItems(res.data);
-          dispatch({ type: 'SET_SAVED_INTERNSHIPS', payload: res.data });
-        }
-      })
-      .catch(() => {});
+    loadOpportunities();
+    loadApplications();
+  }, [workplaceFilter, jobTypeFilter]);
 
-    return () => { isMounted = false; };
-  }, [dispatch]);
+  const loadOpportunities = async () => {
+    try {
+      setLoadingOpps(true);
+      const params = {};
+      if (workplaceFilter !== 'All') params.workplace = workplaceFilter;
+      if (jobTypeFilter !== 'All') params.type = jobTypeFilter;
 
-  // Analyze roles against user profile
-  useEffect(() => {
-    dispatch({ type: 'SET_STEP', payload: 5 });
-    setLoading(true);
+      const res = await api.get('/opportunities', { params });
+      if (Array.isArray(res.data)) {
+        setOpportunities(res.data);
+        const saved = new Set(res.data.filter(o => o.isSaved).map(o => o._id));
+        setSavedOppIds(saved);
+      }
+    } catch (err) {
+      console.error('Error loading opportunities:', err);
+    } finally {
+      setLoadingOpps(false);
+    }
+  };
 
-    const timer = setTimeout(() => {
-      const roles = internshipRoles[activeDomain.id] || [];
-      
-      const analyzedRoles = roles.map(role => {
-        const required = role.requiredSkills || [];
-        const matched = required.filter(rSkill => 
-          userSkills.some(uSkill => uSkill.toLowerCase() === rSkill.toLowerCase())
-        );
-        const matchPercentage = required.length > 0 ? Math.round((matched.length / required.length) * 100) : 0;
-        
-        return {
-          ...role,
-          matchPercentage,
-          matchedSkills: matched,
-          missingSkills: required.filter(s => !matched.includes(s))
-        };
+  const loadApplications = async () => {
+    try {
+      setLoadingApps(true);
+      const res = await api.get('/opportunities/applications');
+      if (Array.isArray(res.data)) {
+        setApplications(res.data);
+      }
+    } catch (err) {
+      console.error('Error loading applications:', err);
+    } finally {
+      setLoadingApps(false);
+    }
+  };
+
+  const handleToggleSaveOpp = async (oppId) => {
+    try {
+      const res = await api.post(`/opportunities/${oppId}/bookmark`);
+      const isNowSaved = res.data?.isSaved;
+
+      setSavedOppIds(prev => {
+        const next = new Set(prev);
+        if (isNowSaved) next.add(oppId);
+        else next.delete(oppId);
+        return next;
       });
 
-      // Sort by match percentage
-      analyzedRoles.sort((a, b) => b.matchPercentage - a.matchPercentage);
-      
-      setSuggestedRoles(analyzedRoles);
-      setLoading(false);
-    }, 600);
-
-    return () => clearTimeout(timer);
-  }, [activeDomain.id, userSkills, dispatch]);
-
-  const isRoleSaved = (role) => {
-    return savedItems.some(item => item.title.toLowerCase() === role.title.toLowerCase());
-  };
-
-  const getSavedRecordId = (role) => {
-    const found = savedItems.find(item => item.title.toLowerCase() === role.title.toLowerCase());
-    return found ? found._id : null;
-  };
-
-  const toggleSave = async (role) => {
-    const recordId = getSavedRecordId(role);
-
-    if (recordId) {
-      // Unsave
-      try {
-        await api.delete(`/internships/${recordId}`);
-        const updated = savedItems.filter(item => item._id !== recordId);
-        setSavedItems(updated);
-        dispatch({ type: 'SET_SAVED_INTERNSHIPS', payload: updated });
-      } catch (err) {
-        console.error('Failed to remove bookmark:', err);
-      }
-    } else {
-      // Save
-      try {
-        const res = await api.post('/internships/save', {
-          title: role.title,
-          company: 'Career Navigator Partner',
-          location: 'Remote / Hybrid',
-          link: `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(role.title)}`,
-          type: 'internship'
-        });
-        const updated = [res.data, ...savedItems];
-        setSavedItems(updated);
-        dispatch({ type: 'SET_SAVED_INTERNSHIPS', payload: updated });
-      } catch (err) {
-        console.error('Failed to save bookmark:', err);
-      }
+      setOpportunities(prev => prev.map(o => o._id === oppId ? { ...o, isSaved: isNowSaved } : o));
+    } catch (err) {
+      console.error('Error saving opportunity:', err);
     }
   };
 
-  const getFilteredRoles = () => {
-    let result = suggestedRoles;
+  const handleQuickTrack = (opp) => {
+    setModalTitle(opp.title);
+    setModalCompany(opp.company);
+    setModalDeadline(opp.deadline || '');
+    setModalStatus('Applied');
+    setModalNotes(`Discovered via Career Navigator. Location: ${opp.location || 'Remote'}`);
+    setModalOpen(true);
+  };
 
-    // Filter by tab
-    if (filter === 'Saved') {
-      result = result.filter(r => isRoleSaved(r));
-    } else if (filter !== 'All') {
-      result = result.filter(r => r.level === filter);
+  const handleSaveModalApplication = async (e) => {
+    e.preventDefault();
+    if (!modalTitle.trim() || !modalCompany.trim()) return;
+
+    try {
+      setSavingApp(true);
+      const res = await api.post('/opportunities/applications', {
+        title: modalTitle.trim(),
+        company: modalCompany.trim(),
+        status: modalStatus,
+        deadline: modalDeadline.trim(),
+        notes: modalNotes.trim(),
+      });
+
+      if (res.data) {
+        setApplications(prev => [res.data, ...prev]);
+        setModalOpen(false);
+        setModalTitle('');
+        setModalCompany('');
+        setModalNotes('');
+        setModalDeadline('');
+        setActiveTab('tracker');
+      }
+    } catch (err) {
+      console.error('Error saving application:', err);
+    } finally {
+      setSavingApp(false);
     }
+  };
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(r =>
-        r.title.toLowerCase().includes(q) ||
-        r.description.toLowerCase().includes(q) ||
-        (r.requiredSkills && r.requiredSkills.some(s => s.toLowerCase().includes(q)))
+  const handleUpdateStatus = async (appId, newStatus) => {
+    try {
+      const res = await api.put(`/opportunities/applications/${appId}`, { status: newStatus });
+      if (res.data) {
+        setApplications(prev => prev.map(a => a._id === appId ? res.data : a));
+      }
+    } catch (err) {
+      console.error('Error updating status:', err);
+    }
+  };
+
+  const handleDeleteApplication = async (appId) => {
+    try {
+      await api.delete(`/opportunities/applications/${appId}`);
+      setApplications(prev => prev.filter(a => a._id !== appId));
+    } catch (err) {
+      console.error('Error deleting application:', err);
+    }
+  };
+
+  const filteredOpportunities = useMemo(() => {
+    return opportunities.filter(opp => {
+      const q = oppSearch.toLowerCase();
+      const matchesSearch = !q ||
+        opp.title.toLowerCase().includes(q) ||
+        opp.company.toLowerCase().includes(q) ||
+        opp.skills.some(s => s.toLowerCase().includes(q)) ||
+        opp.location.toLowerCase().includes(q);
+
+      const matchesWorkplace = workplaceFilter === 'All' || opp.workplaceType === workplaceFilter;
+      const matchesJobType = jobTypeFilter === 'All' || opp.jobType === jobTypeFilter;
+
+      return matchesSearch && matchesWorkplace && matchesJobType;
+    });
+  }, [opportunities, oppSearch, workplaceFilter, jobTypeFilter]);
+
+  const filteredApplications = useMemo(() => {
+    return applications.filter(app => {
+      if (appStatusFilter === 'All') return true;
+      return app.status === appStatusFilter;
+    });
+  }, [applications, appStatusFilter]);
+
+  // Analyzed roles for Matcher tab
+  const analyzedMatcherRoles = useMemo(() => {
+    const roles = internshipRoles[activeDomain.id] || [];
+    const analyzed = roles.map(role => {
+      const required = role.requiredSkills || [];
+      const matched = required.filter(rSkill =>
+        userSkills.some(uSkill => uSkill.toLowerCase() === rSkill.toLowerCase())
       );
-    }
-
-    return result;
-  };
-
-  const filteredRoles = getFilteredRoles();
-  const savedCount = suggestedRoles.filter(r => isRoleSaved(r)).length;
+      const matchPercentage = required.length > 0 ? Math.round((matched.length / required.length) * 100) : 0;
+      return { ...role, matchPercentage, matchedSkills: matched, missingSkills: required.filter(s => !matched.includes(s)) };
+    });
+    analyzed.sort((a, b) => b.matchPercentage - a.matchPercentage);
+    return analyzed.filter(r => {
+      const q = matcherSearch.toLowerCase();
+      const matchesQ = !q || r.title.toLowerCase().includes(q) || r.requiredSkills.some(s => s.toLowerCase().includes(q));
+      const matchesFilter = matcherFilter === 'All' || r.level === matcherFilter;
+      return matchesQ && matchesFilter;
+    });
+  }, [activeDomain.id, userSkills, matcherSearch, matcherFilter]);
 
   return (
     <div className="page page-enter">
       <div className="internships-container">
+        {/* Page Header */}
         <div className="internships-header fade-in-up">
-          <span className="badge badge-teal">💼 Career Opportunities</span>
-          <h1 className="gradient-text" style={{ marginTop: 12 }}>Internship Explorer</h1>
-          <p className="subtitle">Discover real-world opportunities and match them directly with your skillset.</p>
-          
-          {/* Domain Selector */}
-          <div className="domain-selector">
-            {domains.map(d => (
-              <button 
-                key={d.id}
-                className={`domain-pill ${activeDomainId === d.id ? 'active' : ''}`}
-                onClick={() => setActiveDomainId(d.id)}
-                style={{ 
-                  borderColor: activeDomainId === d.id ? `var(--${d.color}-500)` : 'var(--glass-border)',
-                  color: activeDomainId === d.id ? `var(--${d.color}-400, var(--accent-teal))` : 'var(--text-secondary)'
-                }}
-              >
-                <span className="icon">{d.icon}</span> {d.name}
-              </button>
-            ))}
-          </div>
-
-          {/* Search & Filter Bar */}
-          <div className="search-filter-row">
-            <div className="internship-search-box">
-              <span className="search-icon">🔍</span>
-              <input
-                type="text"
-                placeholder="Search roles or skills (e.g., React, Python, Backend)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="internship-search-input"
-              />
-              {searchQuery && (
-                <button className="clear-search-btn" onClick={() => setSearchQuery('')}>×</button>
-              )}
-            </div>
-
-            <div className="filter-tabs">
-              {['All', 'Beginner', 'Intermediate', 'Advanced', 'Saved'].map(f => (
-                <button 
-                  key={f}
-                  className={`filter-btn ${filter === f ? 'active' : ''}`}
-                  onClick={() => setFilter(f)}
-                >
-                  {f} {f === 'Saved' && `(${savedCount})`}
-                </button>
-              ))}
-            </div>
-          </div>
+          <span className="badge badge-teal" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Briefcase size={13} /> Career Opportunities
+          </span>
+          <h1 className="gradient-text" style={{ marginTop: 12 }}>Opportunities & Application Tracker</h1>
+          <p className="subtitle">Discover verified internships, fresher drives, remote roles, and manage your active application pipeline.</p>
         </div>
 
-        {/* Content Area */}
-        {loading ? (
-          <div className="internships-loading glass-panel">
-            <div className="spinner"></div>
-            <h3>Analyzing your profile match...</h3>
-            <p className="subtitle">Ranking opportunities tailored to your technical abilities.</p>
-          </div>
-        ) : (
-          <div className="internships-grid">
-            {filteredRoles.length > 0 ? (
-              filteredRoles.map((role, index) => {
-                const saved = isRoleSaved(role);
+        {/* Master Tab Selector */}
+        <div className="opp-nav-tabs">
+          <button
+            className={`opp-nav-btn ${activeTab === 'opportunities' ? 'active' : ''}`}
+            onClick={() => setActiveTab('opportunities')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <Search size={14} /> Discover Opportunities ({opportunities.length})
+          </button>
+          <button
+            className={`opp-nav-btn ${activeTab === 'tracker' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tracker')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <ClipboardList size={14} /> Application Tracker ({applications.length})
+          </button>
+          <button
+            className={`opp-nav-btn ${activeTab === 'matcher' ? 'active' : ''}`}
+            onClick={() => setActiveTab('matcher')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <Target size={14} /> Role Skill Matcher
+          </button>
+        </div>
+
+        {/* ========================================================= */}
+        {/* TAB 1: OPPORTUNITY DISCOVERY */}
+        {/* ========================================================= */}
+        {activeTab === 'opportunities' && (
+          <div className="opp-tab-content">
+            {/* Filter Bar */}
+            <div className="opp-filters-bar">
+              <input
+                type="text"
+                className="opp-search-input"
+                placeholder="Search job title, company, skills (e.g. React, Python, Node, SQL)..."
+                value={oppSearch}
+                onChange={(e) => setOppSearch(e.target.value)}
+              />
+
+              <div className="opp-filter-chips-row">
+                <span className="opp-filter-label">Workplace:</span>
+                {WORKPLACE_OPTIONS.map(w => (
+                  <button
+                    key={w}
+                    className={`opp-chip-btn ${workplaceFilter === w ? 'active' : ''}`}
+                    onClick={() => setWorkplaceFilter(w)}
+                  >
+                    {w}
+                  </button>
+                ))}
+
+                <span className="opp-filter-label" style={{ marginLeft: 12 }}>Type:</span>
+                {JOB_TYPE_OPTIONS.map(t => (
+                  <button
+                    key={t}
+                    className={`opp-chip-btn ${jobTypeFilter === t ? 'active' : ''}`}
+                    onClick={() => setJobTypeFilter(t)}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loadingOpps ? (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#38bdf8' }}>Loading opportunities...</div>
+            ) : null}
+
+            {/* Opportunities Grid */}
+            <div className="opp-grid">
+              {filteredOpportunities.map(opp => {
+                const isSaved = savedOppIds.has(opp._id);
+
                 return (
-                  <div className="internship-card glass-panel fade-in-up" key={role.id || index} style={{ animationDelay: `${index * 0.05}s` }}>
-                    
-                    <div className="card-header">
-                      <div>
-                        <h3>{role.title}</h3>
-                        <span className={`level-badge ${role.level.toLowerCase()}`}>{role.level}</span>
+                  <div key={opp._id || opp.title} className="opp-card">
+                    <div className="opp-card-header">
+                      <div className="opp-avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Building2 size={20} color="var(--accent-primary)" />
                       </div>
-                      <button 
-                        className={`save-btn ${saved ? 'saved' : ''}`}
-                        onClick={() => toggleSave(role)}
-                        title={saved ? "Remove Bookmark" : "Bookmark Internship"}
-                        aria-label={saved ? "Remove Bookmark" : "Bookmark Internship"}
+                      <div style={{ flex: 1 }}>
+                        <span className="opp-company-name">{opp.company}</span>
+                        <h2 className="opp-card-title">{opp.title}</h2>
+                      </div>
+                      <button
+                        className="opp-save-btn"
+                        onClick={() => handleToggleSaveOpp(opp._id)}
+                        title={isSaved ? 'Remove from Saved' : 'Save Opportunity'}
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                        </svg>
+                        {isSaved ? <BookmarkCheck size={16} color="var(--accent-cyan)" /> : <Bookmark size={16} />}
                       </button>
                     </div>
-                    
-                    <p className="role-description">{role.description}</p>
 
-                    <div className="match-section">
-                      <div className="match-header">
-                        <span>Skill Match</span>
-                        <span style={{ color: role.matchPercentage >= 50 ? 'var(--accent-teal)' : 'var(--accent-rose)'}}>
-                          {role.matchPercentage}% Ready
-                        </span>
-                      </div>
-                      <div className="match-bar-bg">
-                        <div 
-                          className="match-bar-fill" 
-                          style={{ 
-                            width: `${role.matchPercentage}%`,
-                            background: role.matchPercentage >= 50 ? 'linear-gradient(90deg, var(--accent-teal), #00c49a)' : 'var(--accent-rose)'
-                          }}
-                        ></div>
-                      </div>
+                    <div className="opp-meta-row">
+                      <span className="opp-meta-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <MapPin size={12} /> {opp.location}
+                      </span>
+                      <span className="opp-meta-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Briefcase size={12} /> {opp.jobType}
+                      </span>
+                      <span className="opp-meta-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <DollarSign size={12} /> {opp.stipendOrSalary}
+                      </span>
                     </div>
 
-                    <div className="tags-container">
-                      {role.requiredSkills.map((skill, idx) => {
-                        const hasSkill = role.matchedSkills.includes(skill);
-                        return (
-                          <span key={idx} className={`tag ${hasSkill ? 'has-skill' : 'missing-skill'}`}>
-                            {hasSkill ? '✓ ' : ''}{skill}
-                          </span>
-                        );
-                      })}
+                    <p className="opp-desc-text">{opp.description}</p>
+
+                    <div className="opp-skills-row">
+                      {opp.skills.map((skill, sIdx) => (
+                        <span key={sIdx} className="opp-skill-pill">{skill}</span>
+                      ))}
                     </div>
 
-                    <div className="apply-actions">
-                      <p className="apply-text">Apply on official boards:</p>
-                      <div className="action-buttons">
-                        <a 
-                          href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(role.title)}`} 
-                          target="_blank" 
+                    <div className="opp-card-footer">
+                      <span className="opp-deadline-text" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Clock size={12} /> Deadline: {opp.deadline}
+                      </span>
+                      <div className="opp-actions-group">
+                        <a
+                          href={opp.applyUrl}
+                          target="_blank"
                           rel="noopener noreferrer"
-                          className="platform-btn linkedin"
+                          className="opp-apply-btn"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                         >
-                          LinkedIn
+                          Apply <ExternalLink size={13} />
                         </a>
-                        <a 
-                          href={`https://internshala.com/internships/${encodeURIComponent(role.title.toLowerCase().replace(/ /g, '-'))}-internship/`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="platform-btn internshala"
+                        <button
+                          className="opp-track-btn"
+                          onClick={() => handleQuickTrack(opp)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                         >
-                          Internshala
-                        </a>
-                        <a 
-                          href={`https://unstop.com/internships?search=${encodeURIComponent(role.title)}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="platform-btn unstop"
-                        >
-                          Unstop
-                        </a>
+                          <Plus size={13} /> Track App
+                        </button>
                       </div>
                     </div>
-
                   </div>
                 );
-              })
-            ) : (
-              <div className="no-results glass-panel fade-in-up">
-                <span className="no-results-icon">📂</span>
-                <h3>No internships found matching your criteria.</h3>
-                <p>Try changing your filter, clearing your search keywords, or selecting a different career domain.</p>
-                <button className="btn btn-secondary btn-sm" onClick={() => { setFilter('All'); setSearchQuery(''); }}>
-                  Reset Filters
-                </button>
-              </div>
-            )}
+              })}
+            </div>
           </div>
         )}
 
-        <div className="internships-footer center-content">
-          <button className="btn btn-primary btn-lg" onClick={() => navigate('/hackathons')}>
-            Explore Hackathons →
-          </button>
-        </div>
+        {/* ========================================================= */}
+        {/* TAB 2: APPLICATION TRACKER */}
+        {/* ========================================================= */}
+        {activeTab === 'tracker' && (
+          <div className="tracker-tab-content">
+            <div className="tracker-top-bar">
+              <div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc' }}>Your Job Applications</h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Track interview rounds, assessments, and recruitment decisions.</p>
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setModalTitle('');
+                  setModalCompany('');
+                  setModalDeadline('');
+                  setModalNotes('');
+                  setModalStatus('Applied');
+                  setModalOpen(true);
+                }}
+              >
+                + Track New Job
+              </button>
+            </div>
+
+            {/* Status Filter Chips */}
+            <div className="tracker-status-chips">
+              {['All', ...APP_STATUSES].map(st => (
+                <button
+                  key={st}
+                  className={`tracker-status-btn ${appStatusFilter === st ? 'active' : ''}`}
+                  onClick={() => setAppStatusFilter(st)}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+
+            {filteredApplications.length === 0 ? (
+              <div className="tracker-empty">
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <ClipboardList size={36} color="var(--text-secondary)" />
+                </div>
+                <h3 style={{ color: '#f8fafc', marginTop: '0.75rem' }}>No applications tracked yet</h3>
+                <p style={{ color: '#94a3b8' }}>Discover opportunities from the tab above or add jobs manually to track your pipeline.</p>
+              </div>
+            ) : null}
+
+            {/* Applications List */}
+            <div className="tracker-list">
+              {filteredApplications.map(app => (
+                <div key={app._id} className="tracker-item-card">
+                  <div className="tracker-item-main">
+                    <div>
+                      <span className="opp-company-name">{app.company}</span>
+                      <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', marginTop: 4 }}>{app.title}</h3>
+                    </div>
+
+                    <div className="tracker-status-dropdown-box">
+                      <select
+                        className={`status-select ${app.status.toLowerCase()}`}
+                        value={app.status}
+                        onChange={(e) => handleUpdateStatus(app._id, e.target.value)}
+                      >
+                        {APP_STATUSES.map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {app.notes && (
+                    <div className="tracker-notes-box" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <FileText size={13} /> {app.notes}
+                    </div>
+                  )}
+
+                  <div className="tracker-footer-row">
+                    <span style={{ color: '#94a3b8', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {app.deadline ? (
+                        <>
+                          <Clock size={12} /> Deadline: {app.deadline}
+                        </>
+                      ) : (
+                        `Applied: ${new Date(app.appliedDate || app.createdAt).toLocaleDateString()}`
+                      )}
+                    </span>
+                    <button
+                      className="tracker-delete-btn"
+                      onClick={() => handleDeleteApplication(app._id)}
+                    >
+                      Delete Record
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 3: ROLE SKILL MATCHER (LEGACY FEATURE PRESERVED) */}
+        {/* ========================================================= */}
+        {activeTab === 'matcher' && (
+          <div className="matcher-tab-content">
+            {/* Domain Selector */}
+            <div className="domain-selector">
+              {domains.map(d => (
+                <button
+                  key={d.id}
+                  className={`domain-pill ${activeDomainId === d.id ? 'active' : ''}`}
+                  onClick={() => setActiveDomainId(d.id)}
+                >
+                  <span className="icon">{d.icon}</span> {d.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div className="search-filter-row">
+              <input
+                type="text"
+                placeholder="Search domain roles or required skills..."
+                value={matcherSearch}
+                onChange={(e) => setMatcherSearch(e.target.value)}
+                className="internship-search-input"
+              />
+            </div>
+
+            {/* Roles Grid */}
+            <div className="internships-grid">
+              {analyzedMatcherRoles.map(role => (
+                <div key={role.id || role.title} className="internship-card">
+                  <div className="card-header">
+                    <div>
+                      <h3 className="role-title">{role.title}</h3>
+                      <span className="experience-badge">{role.level}</span>
+                    </div>
+                    <div className="match-pill">
+                      <span>{role.matchPercentage}% Match</span>
+                    </div>
+                  </div>
+
+                  <p className="role-description">{role.description}</p>
+
+                  <div className="skills-section">
+                    <span className="skills-label">Required Skills:</span>
+                    <div className="skills-tags">
+                      {role.requiredSkills?.map((s, idx) => (
+                        <span key={idx} className="skill-tag">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
+
+      {/* Track Job Modal */}
+      {modalOpen && (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', marginBottom: '1rem' }}>Track Application</h2>
+            <form onSubmit={handleSaveModalApplication}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: 4 }}>Job Title *</label>
+                <input
+                  type="text"
+                  required
+                  className="modal-input"
+                  placeholder="e.g. Frontend Developer Intern"
+                  value={modalTitle}
+                  onChange={(e) => setModalTitle(e.target.value)}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: 4 }}>Company Name *</label>
+                <input
+                  type="text"
+                  required
+                  className="modal-input"
+                  placeholder="e.g. Google, Microsoft, Startup"
+                  value={modalCompany}
+                  onChange={(e) => setModalCompany(e.target.value)}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: 4 }}>Status</label>
+                <select
+                  className="modal-input"
+                  value={modalStatus}
+                  onChange={(e) => setModalStatus(e.target.value)}
+                >
+                  {APP_STATUSES.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: 4 }}>Deadline / Next Step</label>
+                <input
+                  type="text"
+                  className="modal-input"
+                  placeholder="e.g. Online Assessment due Nov 15"
+                  value={modalDeadline}
+                  onChange={(e) => setModalDeadline(e.target.value)}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: 4 }}>Notes</label>
+                <textarea
+                  className="modal-input"
+                  rows="3"
+                  placeholder="e.g. Applied via career portal, prepared resume highlighting React 19"
+                  value={modalNotes}
+                  onChange={(e) => setModalNotes(e.target.value)}
+                ></textarea>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={savingApp}>
+                  {savingApp ? 'Saving...' : 'Save to Tracker'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-

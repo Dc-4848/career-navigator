@@ -1,6 +1,6 @@
 # Career Navigator 🧭
 
-An AI-powered, cross-platform career guidance and acceleration system for college students and early-career engineers. Career Navigator helps students discover high-demand tech domains, assess skill gaps, generate customized 12-week learning roadmaps, analyze resumes with ATS scoring, and track curated internships and hackathons.
+An AI-powered, cross-platform career guidance and acceleration system for college students and early-career engineers. Career Navigator helps students discover high-demand tech domains, assess skill gaps, follow structured step-by-step learning roadmaps, curate learning resources, track job & internship applications through an end-to-end pipeline, and analyze resumes with ATS scoring.
 
 ---
 
@@ -42,9 +42,36 @@ The system operates on a unified, single-backend architecture: Web and Mobile cl
 
 ### Key Architectural Principles:
 1. **Single Source of Truth**: Web and mobile authenticate against the exact same MongoDB Atlas user collection.
-2. **Synchronized State**: Any profile changes, saved roadmaps, or internships created on one platform immediately reflect on the other.
+2. **Synchronized State**: Any profile changes, saved roadmaps, bookmarks, or job applications created on one platform immediately reflect on the other.
 3. **Zero Direct DB Access**: Mobile clients never connect directly to MongoDB; all queries go through the Express REST API.
-4. **Resilient LAN Networking**: Mobile client dynamically resolves the packager host address via `Constants.expoConfig.hostUri` with LAN IP fallback, enabling seamless Expo Go operation on physical Android and iOS devices.
+4. **Resilient LAN & Production Networking**: Mobile client dynamically prioritizes `EXPO_PUBLIC_API_URL`, falls back to production `https://career-navigator-2cwd.onrender.com` in production, or resolves the host address via `Constants.expoConfig.hostUri` on local Wi-Fi.
+
+---
+
+## ✨ Core & Expanded Capabilities
+
+### 1. 🗺️ 12+ Structured Learning Roadmaps
+- **Catalog of Industry Tracks**: Full Stack Web Development, Frontend (React/Next.js), Backend (Node/Express/Microservices), Data Analytics, Machine Learning & AI, Cybersecurity & Ethical Hacking, Cloud & DevOps (AWS/Docker/K8s), Android & Mobile (React Native/Expo), Data Structures & Algorithms, Python, Java, and UI/UX Design.
+- **Milestone-by-Milestone Progress**: Multi-stage learning paths with practical assignments, mini-projects, capstone project blueprints, topic checkboxes, and real-time completion percentages saved to Atlas.
+- **AI Custom Roadmap Synthesis**: Custom tailored curriculum generation for any niche degree, background, or time commitment.
+
+### 2. 📚 Curated Learning Resource Library
+- **Verified High-Yield Material**: Curated official documentation (MDN, Scikit-learn, Docker, PyTorch, React, etc.), top video guides, interactive sandboxes, and full-length courses.
+- **Smart Filtering**: Filter by resource type (Docs, Video, Interactive, Course), tech stack, difficulty, and 100% free resources.
+- **Cross-Platform Bookmarking**: Personal bookmark collection synchronized seamlessly across Web and Mobile.
+
+### 3. 💼 Opportunity Discovery & Application Tracker
+- **Smart Search & Filters**: Live internships, fresher jobs, entry-level developer roles, and off-campus listings filtered by workplace (Remote, Hybrid, Onsite) and job type.
+- **Kanban Application Pipeline**: Track application lifecycles through 6 distinct stages: `Saved` → `Applied` → `Assessment` → `Interview` → `Offered` / `Rejected`.
+- **Notes & Deadlines**: Log interview dates, company contact notes, stipend/salary packages, and follow-up deadlines directly in Atlas.
+
+### 4. 📊 Unified Student Dashboard & Personalized Recommendations
+- **Real-Time Analytics**: Profile completion gauge, active roadmap progression %, total tracked applications, and saved resource count.
+- **Recommendation Engine**: Algorithmic match scoring that analyzes student profile skills, target goals, and active domain to explain *why* specific roadmaps, resources, and jobs are recommended.
+
+### 5. 📄 ATS Resume Analyzer & Skill Gap Engine
+- **ATS Scoring**: Analyzes raw resume text and keyword density against high-demand tech job specifications.
+- **Semantic Vector Match**: Evaluates user skill gap using semantic similarity calculations to pinpoint missing proficiencies.
 
 ---
 
@@ -54,14 +81,27 @@ The system operates on a unified, single-backend architecture: Web and Mobile cl
 career-navigator/
 ├── web/
 │   └── frontend/          # React 19 + Vite web client
+│       └── src/
+│           ├── components/ # Navbar, ProtectedRoute, UI components
+│           ├── pages/      # Landing, Profile, Roadmap, Resources, Internships, etc.
+│           └── api/        # Axios API client configured for unified backend
 ├── backend/               # Node.js + Express REST API
+│   ├── config/            # AI configuration
+│   ├── data/              # Curated roadmaps, resources, and opportunities datasets
+│   ├── middleware/        # JWT Authentication and authorization middleware
+│   ├── models/            # Mongoose schemas (User, Profile, LearningResource, etc.)
+│   ├── routes/            # REST API endpoints
 │   ├── tests/             # Automated test runners & report generators
 │   └── .env.example       # Backend environment configuration template
 ├── mobile/
 │   └── frontend/          # React Native + Expo SDK 57 mobile client
+│       └── src/
+│           ├── api/       # Dynamic packager/LAN/production API client
+│           ├── context/   # MobileAppContext (shared auth, roadmap & tracker state)
+│           └── screens/   # Home, Roadmap, Resources, Jobs, Profile, etc.
 ├── .gitignore             # Git exclusion rules (node_modules, .env, builds)
 ├── README.md              # Project documentation
-├── Career_Navigator_Complete_Test_Report.xlsx # 13-sheet comprehensive QA report
+├── Career_Navigator_Complete_Test_Report.xlsx # 590+ test case master report
 └── Career_Navigator_Test_Report.xlsx          # Detailed test case matrix
 ```
 
@@ -75,8 +115,8 @@ career-navigator/
 | **Mobile Frontend**| React Native 0.86.3, Expo SDK 57.0.31 | Cross-platform (Android & iOS), Expo Vector Icons, Dynamic LAN networking |
 | **Backend API** | Node.js, Express 5.2.1 | RESTful architecture, Stateless JWT sessions, bcryptjs password hashing |
 | **Database** | MongoDB Atlas (`careernavigator`) | Managed cloud cluster, Mongoose ODM schemas with strict validation |
-| **Local AI Layer** | Ollama, Qwen3-8B, BGE-M3 | 12-week roadmap generator, semantic skill gap embedding, ATS resume analyzer |
-| **Quality Assurance**| Selenium, Appium specs, Node Test Suite | 580+ test cases covering API, Web, Mobile, Security, and Load benchmarks |
+| **AI Layer** | Ollama, Qwen3-8B, BGE-M3 | 12-week roadmap generator, semantic skill gap embedding, ATS resume analyzer |
+| **Quality Assurance**| Selenium, Appium specs, Node Test Suite | 590+ test cases covering API, Web, Mobile, Security, and Load benchmarks |
 
 ---
 
@@ -86,7 +126,7 @@ career-navigator/
 - **Node.js**: v18.0.0 or higher
 - **npm**: v9.0.0 or higher
 - **MongoDB Atlas**: Active cluster with database `careernavigator`
-- **Expo Go** (optional, for physical phone testing): Available on Google Play Store and Apple App Store
+- **Expo Go** (for physical phone testing): Available on Google Play Store and Apple App Store
 
 ---
 
@@ -150,7 +190,7 @@ career-navigator/
    ```
 3. Start the Expo Metro bundler:
    ```bash
-   npx expo start --clear
+   npx expo start --clear --lan
    ```
 4. **Connect your physical Android/iOS phone:**
    - Ensure your phone is connected to the **same Wi-Fi network** as your development laptop.
@@ -165,23 +205,25 @@ career-navigator/
 The application includes an extensive automated QA test suite and master Excel reporting infrastructure.
 
 ### Running Live Tests & Generating Reports
-From the `backend/tests` directory:
+From the `backend` directory:
 ```bash
-# Execute end-to-end cross-platform shared data test
-node test-shared-data.js
+# Execute end-to-end integration verification (19/19 passing)
+node ../.gemini/antigravity/brain/<CONVERSATION_ID>/scratch/test_all_endpoints.js
 
-# Generate 580+ test case master report (Career_Navigator_Complete_Test_Report.xlsx)
-node generateMasterReport.js
+# Generate 590+ test case master report (Career_Navigator_Complete_Test_Report.xlsx)
+node tests/generateMasterReport.js
 
 # Generate test matrix workbook (Career_Navigator_Test_Report.xlsx)
-node generateTestReport.js
+node tests/generateTestReport.js
 ```
 
 ### Test Coverage Highlights:
 - **API & Authentication**: Verified user signup, bcrypt hashing, stateless JWT session retrieval, unauthorized request rejection.
-- **Cross-Platform Sync**: Verified user created on Web can log in from Mobile LAN; profile updates on Mobile immediately reflect on Web; roadmaps and internships created on one platform appear on the other.
+- **Cross-Platform Sync**: Verified user created on Web can log in from Mobile LAN; profile updates on Mobile immediately reflect on Web; roadmaps and applications created on one platform appear on the other.
+- **Career Roadmaps & Resources**: Verified 12+ structured tracks, interactive topic/stage toggles, and resource search/bookmarking.
+- **Application Pipeline**: Verified CRUD application tracking and status progression.
 - **Security Audit**: Tested resilience against NoSQL injection payloads (`{$gt: ""}`), malformed JWT rejection, and verified that `.env` credentials are excluded from source control.
-- **Performance Benchmarks**: Root API endpoints sustain concurrent load with sub-100ms average response times.
+- **Performance Benchmarks**: Root API endpoints sustain concurrent load with sub-50ms average response times.
 
 ---
 

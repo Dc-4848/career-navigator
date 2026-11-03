@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  User,
+  CheckCircle2,
+  AlertCircle,
+  GraduationCap,
+  Calendar,
+  Zap,
+  Target,
+  Check,
+  Compass,
+  ArrowRight
+} from 'lucide-react';
 import { useAppState } from '../store/AppContext';
 import api from '../api';
 import './Profile.css';
@@ -159,25 +171,27 @@ export default function Profile() {
       <section className="profile-section">
         <div className="container">
           <div className="section-header">
-            <span className="badge">📋 Step 1 of 2: Basic & Skills Information</span>
+            <span className="badge badge-teal" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <User size={13} /> Step 1: Academic & Skills Profile
+            </span>
             <h2 style={{ marginTop: '16px' }}>
-              Tell Us About <span className="gradient-text">Yourself</span>
+              Tell Us About <span className="gradient-text">Your Background</span>
             </h2>
-            <p>We'll personalize your entire roadmap and career recommendations based on your profile.</p>
+            <p>We personalize your learning roadmap and career tracking based on your profile.</p>
           </div>
 
           {/* Success Banner */}
           {saveSuccess && (
-            <div className="profile-banner success-banner glass-card">
-              <span className="banner-icon">✓</span>
+            <div className="profile-banner success-banner glass-card" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CheckCircle2 size={16} color="var(--accent-teal)" />
               <span>Your profile has been saved successfully to your account!</span>
             </div>
           )}
 
           {/* Error Banner */}
           {saveError && (
-            <div className="profile-banner error-banner glass-card">
-              <span className="banner-icon">⚠</span>
+            <div className="profile-banner error-banner glass-card" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertCircle size={16} color="var(--accent-rose)" />
               <span>{saveError}</span>
             </div>
           )}
@@ -185,8 +199,8 @@ export default function Profile() {
           <form className="profile-form glass-card" onSubmit={(e) => handleSubmit(e, true)} id="profile-form">
             {/* Degree */}
             <div className="form-group">
-              <label className="form-label" htmlFor="degree">
-                🎓 Degree / Program <span className="required-star">*</span>
+              <label className="form-label" htmlFor="degree" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <GraduationCap size={15} /> Degree / Program <span className="required-star">*</span>
               </label>
               <select
                 className={`form-select ${errors.degree ? 'input-error' : ''}`}
@@ -211,8 +225,8 @@ export default function Profile() {
 
             {/* Year */}
             <div className="form-group">
-              <label className="form-label" htmlFor="year">
-                📅 Current Year <span className="required-star">*</span>
+              <label className="form-label" htmlFor="year" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Calendar size={15} /> Current Year <span className="required-star">*</span>
               </label>
               <select
                 className={`form-select ${errors.year ? 'input-error' : ''}`}
@@ -236,8 +250,8 @@ export default function Profile() {
 
             {/* Skills */}
             <div className="form-group">
-              <label className="form-label" htmlFor="skill-input">
-                💡 Current Skills (Type and press Enter)
+              <label className="form-label" htmlFor="skill-input" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Zap size={15} /> Current Skills (Type and press Enter)
               </label>
               <div className="tag-container" onClick={() => document.getElementById('skill-input')?.focus()}>
                 {form.skills.map((s) => (
@@ -296,8 +310,8 @@ export default function Profile() {
 
             {/* Interests */}
             <div className="form-group">
-              <label className="form-label">
-                🎯 Interests <span className="required-star">*</span>
+              <label className="form-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Target size={15} /> Technical Interests <span className="required-star">*</span>
                 {errors.interests && <span className="form-error" style={{ marginLeft: 8 }}>{errors.interests}</span>}
               </label>
               <div className="check-grid">
@@ -314,7 +328,9 @@ export default function Profile() {
                       }}
                       disabled={saving}
                     >
-                      <span className="check-box-indicator">{isSelected ? '✓' : ''}</span>
+                      <span className="check-box-indicator">
+                        {isSelected ? <Check size={12} /> : ''}
+                      </span>
                       <span>{interest}</span>
                     </button>
                   );
@@ -324,7 +340,9 @@ export default function Profile() {
 
             {/* Goal */}
             <div className="form-group">
-              <label className="form-label" htmlFor="goal">🚀 Career Goal (optional)</label>
+              <label className="form-label" htmlFor="goal" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Compass size={15} /> Career Goal (Optional)
+              </label>
               <textarea
                 className="form-textarea"
                 id="goal"
@@ -344,18 +362,19 @@ export default function Profile() {
                 onClick={(e) => handleSubmit(e, false)}
                 disabled={saving}
               >
-                {saving ? 'Saving...' : '💾 Save Profile'}
+                {saving ? 'Saving...' : 'Save Profile'}
               </button>
               <button
                 type="submit"
                 className="btn btn-primary btn-lg"
                 id="profile-submit"
                 disabled={saving}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
               >
                 {saving ? (
                   <span className="btn-loading">Saving to MongoDB...</span>
                 ) : (
-                  <>Save & Continue to Domains →</>
+                  <>Save & Continue to Domains <ArrowRight size={16} /></>
                 )}
               </button>
             </div>

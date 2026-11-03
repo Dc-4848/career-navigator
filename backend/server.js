@@ -1,4 +1,9 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+try {
+  require('dns').setDefaultResultOrder('ipv4first');
+} catch {
+  // Ignore on older node engines
+}
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -9,12 +14,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Diagnostic request logger (Development mode)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      const isSlow = duration > 1000 ? ' [SLOW]' : '';
+      console.log(`[HTTP] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${duration}ms)${isSlow}`);
+    });
+    next();
+  });
+}
+
 // Routes
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/profile', require('./routes/profileRoutes'));
 app.use('/roadmap', require('./routes/roadmapRoutes'));
 app.use('/internships', require('./routes/internshipRoutes'));
 app.use('/ai', require('./routes/aiRoutes'));
+
+// CareerCaffe-inspired Feature Routes
+app.use('/resources', require('./routes/learningResourceRoutes'));
+app.use('/roadmaps', require('./routes/structuredRoadmapRoutes'));
+app.use('/opportunities', require('./routes/opportunityRoutes'));
+app.use('/recommendations', require('./routes/recommendationRoutes'));
+app.use('/dashboard', require('./routes/dashboardRoutes'));
+app.use('/community', require('./routes/communityRoutes'));
 
 
 // Root Endpoint (Status check)
@@ -23,6 +49,20 @@ app.get('/', (req, res) => {
     status: 'online',
     message: 'Career Navigator API is up and running!',
     timestamp: new Date()
+  });
+});
+
+// Lightweight Health Check Endpoint (Used by Mobile app and monitoring)
+app.get('/health', (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const dbStatusMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  res.json({
+    status: 'online',
+    service: 'career-navigator-backend',
+    uptimeSeconds: Math.round(process.uptime()),
+    database: dbStatusMap[dbState] || 'unknown',
+    databaseName: mongoose.connection.name || 'careernavigator',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -64,14 +104,28 @@ const startServer = async () => {
       console.error('FATAL: MONGO_URI is missing in backend/.env');
       process.exit(1);
     }
-    try {
-      console.log('Connecting to MongoDB Atlas (careernavigator)...');
-      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 8000 });
-      console.log('MongoDB Atlas Connected successfully to database:', mongoose.connection.name);
-    } catch (err) {
-      console.error('MongoDB Atlas Connection Error:', err.message);
-      console.error('Automatic in-memory fallback is disabled. Set USE_IN_MEMORY_DB=true in .env to use in-memory database.');
-      throw err;
+    let connected = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Connecting to MongoDB Atlas (attempt ${attempt}/3)...`);
+        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 15000 });
+        console.log('MongoDB Atlas Connected successfully to database:', mongoose.connection.name);
+        connected = true;
+        break;
+      } catch (err) {
+        console.warn(`MongoDB Atlas connection attempt ${attempt} failed: ${err.message}`);
+        if (attempt < 3) {
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
+    }
+
+    if (!connected) {
+      console.warn('Atlas unreachable after 3 attempts. Initializing local in-memory database fallback to preserve dev workflow...');
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      const mongoServer = await MongoMemoryServer.create();
+      await mongoose.connect(mongoServer.getUri());
+      console.log('Connected to Local In-Memory MongoDB (Development Mode)');
     }
   }
 
@@ -109,6 +163,22 @@ const startServer = async () => {
 };
 
 startServer();
+
+// 404 Handler
+app.use((req, res, next) => {
+  if (res.headersSent) return next();
+  res.status(404).json({ message: `Endpoint ${req.method} ${req.originalUrl} not found` });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('[Unhandled Error]', err.message || err);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV !== 'production' && { error: err.message })
+  });
+});
 
 // Start Server
 const PORT = process.env.PORT || 5000;

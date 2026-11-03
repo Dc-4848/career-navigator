@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Compass, X } from 'lucide-react';
 import { useAppState } from '../store/AppContext';
 
 const navItems = [
   { path: '/', label: 'Home' },
+  { path: '/community', label: 'Community' },
   { path: '/profile', label: 'Profile' },
   { path: '/domains', label: 'Domains' },
-  { path: '/quiz', label: 'Find My Domain' },
   { path: '/roadmap', label: 'Roadmap' },
+  { path: '/resources', label: 'Resources' },
   { path: '/skills', label: 'Skills' },
-  { path: '/internships', label: 'Internships' },
+  { path: '/internships', label: 'Opportunities' },
   { path: '/hackathons', label: 'Hackathons' },
   { path: '/resume-analyzer', label: 'Resume Analyzer' },
 ];
@@ -49,8 +51,10 @@ export default function Navbar() {
     <>
       <header className="nav-header" id="main-nav">
         <Link to="/" className="nav-logo" onClick={() => setMobileOpen(false)} aria-label="Career Navigator Home">
-          <span className="nav-logo-icon">🧭</span>
-          <span>Career Navigator</span>
+          <span className="nav-logo-icon">
+            <Compass size={20} color="#38BDF8" strokeWidth={2.2} />
+          </span>
+          <span className="nav-brand-title">Career Navigator</span>
         </Link>
 
         {/* Hamburger Toggle Button */}
@@ -74,8 +78,9 @@ export default function Navbar() {
                 className="mobile-close-btn"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
           )}

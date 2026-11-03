@@ -27,7 +27,8 @@ export default function DomainsScreen({ navigation }) {
       setSelectedId(domain.id);
       setSavingId(domain.id);
       await saveDomainSelection(domain);
-      navigation.navigate('RoadmapTab');
+      // Navigate to RoadmapTab nested inside MainTabs
+      navigation.navigate('MainTabs', { screen: 'RoadmapTab' });
     } catch (e) {
       console.warn('Select domain error:', e);
     } finally {

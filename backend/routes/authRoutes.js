@@ -8,8 +8,8 @@ const router = express.Router();
 router.post('/signup', async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required' });
+    if (!name || !email || !password || typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Name, email, and password strings are required' });
     }
 
     if (password.length < 6) {
@@ -43,8 +43,8 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Valid email and password strings are required' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();

@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  CheckCircle2,
+  Layers,
+  Briefcase,
+  Edit3,
+  Target,
+  Trophy
+} from 'lucide-react';
 import { useAppState } from '../store/AppContext';
 import domains from '../data/domains';
 import api from '../api';
@@ -188,8 +196,8 @@ export default function SkillGap() {
   return (
     <div className="skillgap-container">
       {/* Toast Notification */}
-      <div className={`toast-notification glass-panel ${showSavedToast ? 'show' : ''}`}>
-        <span className="toast-icon">💾</span>
+      <div className={`toast-notification glass-panel ${showSavedToast ? 'show' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <CheckCircle2 size={16} color="var(--accent-teal)" />
         <span className="toast-message">Skills successfully saved to your profile!</span>
       </div>
 
@@ -201,7 +209,9 @@ export default function SkillGap() {
       {/* Target Selector Grid */}
       <div className="role-selector-panel glass-panel fade-in-up" style={{ animationDelay: '0.05s' }}>
         <div className="selector-group">
-          <label htmlFor="domain-select">🎯 Career Domain</label>
+          <label htmlFor="domain-select" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Layers size={14} /> Career Domain
+          </label>
           <select 
             id="domain-select" 
             value={selectedDomain.id} 
@@ -209,13 +219,15 @@ export default function SkillGap() {
             className="styled-select"
           >
             {domains.map(d => (
-              <option key={d.id} value={d.id}>{d.icon} {d.name}</option>
+              <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
         </div>
 
         <div className="selector-group">
-          <label htmlFor="role-select">💼 Target Role</label>
+          <label htmlFor="role-select" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Briefcase size={14} /> Target Role
+          </label>
           <select 
             id="role-select" 
             value={selectedRole.role} 
@@ -263,7 +275,9 @@ export default function SkillGap() {
           
           {/* Dynamic Skill Input */}
           <div className="skills-section add-skills-card glass-panel">
-            <h3><span className="icon">✍️</span> Type Your Skills</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Edit3 size={16} color="var(--accent-primary)" /> Type Your Skills
+            </h3>
             <p className="section-description">Add new skills to your profile instantly and watch your score adjust.</p>
             
             <div className="tag-input-container">
@@ -304,7 +318,9 @@ export default function SkillGap() {
 
           {/* Current Skills Tags */}
           <div className="skills-section have-skills glass-panel">
-            <h3><span className="icon">✅</span> Your Skills ({tempSkills.length})</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CheckCircle2 size={16} color="var(--accent-teal)" /> Your Skills ({tempSkills.length})
+            </h3>
             {tempSkills.length > 0 ? (
               <div className="tags-container">
                 {tempSkills.map((skill, idx) => (
@@ -315,17 +331,19 @@ export default function SkillGap() {
                 ))}
               </div>
             ) : (
-              <p className="empty-state">No skills listed yet. Type some skills above to see your score rise!</p>
+              <p className="empty-state">No skills listed yet. Type some skills above to see your score rise.</p>
             )}
           </div>
 
           {/* Skill Gap breakdown */}
           <div className="skills-section need-skills glass-panel">
-            <h3><span className="icon">🎯</span> Skills to Learn for {selectedRole.role}</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Target size={16} color="var(--accent-cyan)" /> Skills to Learn for {selectedRole.role}
+            </h3>
             {missingSkills.length === 0 ? (
               <div className="completed-all-state">
-                <span className="check-all-icon">🏆</span>
-                <p>Wow! You have all the recommended skills for a {selectedRole.role} role!</p>
+                <Trophy size={28} color="var(--accent-cyan)" />
+                <p>You have all the recommended skills for a {selectedRole.role} role.</p>
               </div>
             ) : (
               <div className="skills-categories">

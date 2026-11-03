@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 import { useAppState } from '../store/AppContext';
 import api from '../api';
 import './Auth.css';
@@ -60,8 +61,8 @@ export default function Signup() {
 
           {/* Error Message */}
           {error && (
-            <div className="auth-error">
-              <span className="auth-error-icon">⚠</span>
+            <div className="auth-error" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertCircle size={15} color="var(--accent-rose)" />
               <span>{error}</span>
             </div>
           )}

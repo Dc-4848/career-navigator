@@ -1,5 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  FileText,
+  UploadCloud,
+  Check,
+  AlertCircle,
+  X,
+  CheckCircle2,
+  Target,
+  Layers,
+  Sparkles
+} from 'lucide-react';
 import { useAppState } from '../store/AppContext';
 import domains from '../data/domains';
 import './ResumeAnalyzer.css';
@@ -194,9 +205,11 @@ export default function ResumeAnalyzer() {
       <section className="resume-section">
         <div className="container">
           <div className="section-header">
-            <span className="badge badge-violet">📄 Smart Tool</span>
+            <span className="badge badge-teal" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <FileText size={13} /> ATS Scanner
+            </span>
             <h2 style={{ marginTop: '16px' }}>
-              AI Resume <span className="gradient-text">Analyzer</span>
+              Resume <span className="gradient-text">Analyzer</span>
             </h2>
             <p>Upload your resume to check ATS keyword readiness, score strengths, and discover ideal tech roles.</p>
           </div>
@@ -217,17 +230,23 @@ export default function ResumeAnalyzer() {
                 onChange={(e) => handleFileChange(e.target.files[0])}
                 style={{ display: 'none' }}
               />
-              <div className="dropzone-icon">📁</div>
+              <div className="dropzone-icon" style={{ display: 'flex', justifyContent: 'center' }}>
+                <UploadCloud size={36} color="var(--accent-primary)" />
+              </div>
               <h3>{file ? file.name : 'Click or Drag & Drop your Resume'}</h3>
               <p className="dropzone-hint">Supports PDF, DOCX, TXT (Max 5MB)</p>
               {file && (
-                <span className="badge badge-teal" style={{ marginTop: 12 }}>
-                  ✓ {(file.size / 1024).toFixed(1)} KB Ready to scan
+                <span className="badge badge-teal" style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <Check size={12} /> {(file.size / 1024).toFixed(1)} KB Ready to scan
                 </span>
               )}
             </div>
 
-            {error && <div className="resume-error-msg">⚠ {error}</div>}
+            {error && (
+              <div className="resume-error-msg" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <AlertCircle size={14} /> {error}
+              </div>
+            )}
 
             <div className="upload-actions">
               <button
@@ -235,7 +254,7 @@ export default function ResumeAnalyzer() {
                 onClick={analyzeResume}
                 disabled={!file || analyzing}
               >
-                {analyzing ? 'Scanning & Scoring...' : '⚡ Analyze Resume Now'}
+                {analyzing ? 'Scanning & Scoring...' : 'Analyze Resume Now'}
               </button>
             </div>
           </div>
@@ -261,7 +280,7 @@ export default function ResumeAnalyzer() {
                 <div className="overview-summary">
                   <h3>
                     Resume Health:{' '}
-                    <span className={analysisResult.score >= 75 ? 'text-teal' : analysisResult.score >= 50 ? 'text-violet' : 'text-rose'}>
+                    <span className={analysisResult.score >= 75 ? 'text-teal' : analysisResult.score >= 50 ? 'text-cyan' : 'text-rose'}>
                       {analysisResult.score >= 75 ? 'Excellent' : analysisResult.score >= 50 ? 'Competitive' : 'Needs Optimization'}
                     </span>
                   </h3>
@@ -270,17 +289,17 @@ export default function ResumeAnalyzer() {
                     <strong>{analysisResult.skills.length} technical skills</strong> across core categories.
                   </p>
                   <div className="section-pills">
-                    <span className={`badge ${analysisResult.hasEducation ? 'badge-teal' : 'badge-rose'}`}>
-                      {analysisResult.hasEducation ? '✓' : '✗'} Education
+                    <span className={`badge ${analysisResult.hasEducation ? 'badge-teal' : 'badge-rose'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {analysisResult.hasEducation ? <Check size={12} /> : <X size={12} />} Education
                     </span>
-                    <span className={`badge ${analysisResult.hasProjects ? 'badge-teal' : 'badge-rose'}`}>
-                      {analysisResult.hasProjects ? '✓' : '✗'} Projects
+                    <span className={`badge ${analysisResult.hasProjects ? 'badge-teal' : 'badge-rose'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {analysisResult.hasProjects ? <Check size={12} /> : <X size={12} />} Projects
                     </span>
-                    <span className={`badge ${analysisResult.hasExperience ? 'badge-teal' : 'badge-rose'}`}>
-                      {analysisResult.hasExperience ? '✓' : '✗'} Experience
+                    <span className={`badge ${analysisResult.hasExperience ? 'badge-teal' : 'badge-rose'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {analysisResult.hasExperience ? <Check size={12} /> : <X size={12} />} Experience
                     </span>
-                    <span className={`badge ${analysisResult.hasCertifications ? 'badge-teal' : 'badge-rose'}`}>
-                      {analysisResult.hasCertifications ? '✓' : '✗'} Certifications
+                    <span className={`badge ${analysisResult.hasCertifications ? 'badge-teal' : 'badge-rose'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {analysisResult.hasCertifications ? <Check size={12} /> : <X size={12} />} Certifications
                     </span>
                   </div>
                 </div>
@@ -291,7 +310,9 @@ export default function ResumeAnalyzer() {
                 {/* Detected Skills */}
                 <div className="glass-card result-subcard">
                   <div className="card-heading">
-                    <h4>💡 Detected Skills ({analysisResult.skills.length})</h4>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <CheckCircle2 size={15} color="var(--accent-primary)" /> Detected Skills ({analysisResult.skills.length})
+                    </h4>
                     {analysisResult.skills.length > 0 && (
                       <button className="btn btn-secondary btn-sm" onClick={handleImportSkills}>
                         + Add to Profile
@@ -312,13 +333,17 @@ export default function ResumeAnalyzer() {
                 {/* Recommended Career Roles */}
                 <div className="glass-card result-subcard">
                   <div className="card-heading">
-                    <h4>🎯 Recommended Career Domains</h4>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Target size={15} color="var(--accent-cyan)" /> Recommended Career Domains
+                    </h4>
                   </div>
                   <div className="recommended-domains-list">
                     {analysisResult.recommendedDomains.map((rec, i) => (
                       <div className="domain-rec-row" key={i}>
                         <div className="domain-rec-info">
-                          <span className="rec-icon">{rec.domain.icon}</span>
+                          <span className="rec-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                            <Layers size={18} color="var(--accent-primary)" />
+                          </span>
                           <div>
                             <strong>{rec.domain.name}</strong>
                             <p className="rec-sub">{rec.matchingSkills.length} matching skills</p>
@@ -335,20 +360,26 @@ export default function ResumeAnalyzer() {
               <div className="results-grid">
                 {/* Strengths */}
                 <div className="glass-card result-subcard">
-                  <h4>✅ Strengths Identified</h4>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CheckCircle2 size={15} color="var(--accent-teal)" /> Strengths Identified
+                  </h4>
                   <ul className="feedback-list">
                     {analysisResult.strengths.map((st, i) => (
-                      <li key={i}><span className="bullet-teal">✓</span> {st}</li>
+                      <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Check size={13} color="var(--accent-teal)" /> {st}
+                      </li>
                     ))}
                   </ul>
                 </div>
 
                 {/* Suggestions */}
                 <div className="glass-card result-subcard">
-                  <h4>🚀 Actionable Improvements</h4>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Sparkles size={15} color="var(--accent-cyan)" /> Actionable Improvements
+                  </h4>
                   <ul className="feedback-list">
                     {analysisResult.suggestions.map((sg, i) => (
-                      <li key={i}><span className="bullet-rose">⚡</span> {sg}</li>
+                      <li key={i}><span className="bullet-rose">•</span> {sg}</li>
                     ))}
                   </ul>
                 </div>

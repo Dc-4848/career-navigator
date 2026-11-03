@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Trophy,
+  Search,
+  Target,
+  TrendingUp,
+  Bookmark,
+  ExternalLink
+} from 'lucide-react';
 import { useAppState } from '../store/AppContext';
 import hackathonEvents from '../data/hackathon-events';
 import domains from '../data/domains';
@@ -131,8 +139,10 @@ export default function Hackathons() {
     <div className="page page-enter">
       <div className="hackathons-container">
         <div className="hackathons-header fade-in-up">
-          <span className="badge badge-violet">🏆 Competitive Programming & Building</span>
-          <h1 className="gradient-text" style={{ marginTop: 12 }}>Smart Hackathon Explorer</h1>
+          <span className="badge badge-teal" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Trophy size={13} /> Competitive Engineering Challenges
+          </span>
+          <h1 className="gradient-text" style={{ marginTop: 12 }}>Hackathon Explorer</h1>
           <p className="subtitle">Test your abilities, collaborate with peers, build portfolio projects, and win prizes.</p>
           
           {/* Domain Selector */}
@@ -147,7 +157,7 @@ export default function Hackathons() {
                   color: activeDomainId === d.id ? `var(--${d.color}-400, var(--accent-teal))` : 'var(--text-secondary)'
                 }}
               >
-                <span className="icon">{d.icon}</span> {d.name}
+                {d.name}
               </button>
             ))}
           </div>
@@ -155,7 +165,9 @@ export default function Hackathons() {
           {/* Search & Filter */}
           <div className="search-filter-row">
             <div className="internship-search-box">
-              <span className="search-icon">🔍</span>
+              <span className="search-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                <Search size={16} />
+              </span>
               <input
                 type="text"
                 placeholder="Search hackathons, themes, or skills (e.g. AI, Web3, FinTech)..."
@@ -199,7 +211,9 @@ export default function Hackathons() {
                     <div className="card-header">
                       <div>
                         <h3>{event.name}</h3>
-                        <span className="prize-badge">🏆 {event.prize}</span>
+                        <span className="prize-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <Trophy size={12} /> {event.prize}
+                        </span>
                       </div>
                       <button 
                         className={`save-btn ${saved ? 'saved' : ''}`}
@@ -207,15 +221,13 @@ export default function Hackathons() {
                         title={saved ? "Remove Bookmark" : "Bookmark Hackathon"}
                         aria-label={saved ? "Remove Bookmark" : "Bookmark Hackathon"}
                       >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                        </svg>
+                        <Bookmark size={20} fill={saved ? "currentColor" : "none"} />
                       </button>
                     </div>
                     
                     <div className="card-details">
-                      <p><span className="detail-icon">🎯</span> <strong>Theme:</strong> {event.theme}</p>
-                      <p><span className="detail-icon">📈</span> <strong>Difficulty:</strong> {event.difficulty}</p>
+                      <p><Target size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} /> <strong>Theme:</strong> {event.theme}</p>
+                      <p><TrendingUp size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} /> <strong>Difficulty:</strong> {event.difficulty}</p>
                     </div>
 
                     <div className="match-section">
@@ -230,7 +242,7 @@ export default function Hackathons() {
                           className="match-bar-fill" 
                           style={{ 
                             width: `${event.matchPercentage}%`,
-                            background: event.matchPercentage >= 50 ? 'linear-gradient(90deg, var(--accent-teal), #00c49a)' : 'var(--accent-rose)'
+                            background: event.matchPercentage >= 50 ? 'var(--accent-teal)' : 'var(--accent-rose)'
                           }}
                         ></div>
                       </div>
@@ -241,7 +253,7 @@ export default function Hackathons() {
                         const hasSkill = event.matchedSkills.includes(skill);
                         return (
                           <span key={idx} className={`tag ${hasSkill ? 'has-skill' : 'missing-skill'}`}>
-                            {hasSkill ? '✓ ' : ''}{skill}
+                            {hasSkill ? 'Matched: ' : ''}{skill}
                           </span>
                         );
                       })}
@@ -281,7 +293,9 @@ export default function Hackathons() {
               })
             ) : (
               <div className="no-results glass-panel fade-in-up">
-                <span className="no-results-icon">🏆</span>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                  <Trophy size={32} color="var(--text-secondary)" />
+                </div>
                 <h3>No hackathons found matching your criteria.</h3>
                 <p>Try clearing your search keyword, selecting a different difficulty, or choosing another domain.</p>
                 <button className="btn btn-secondary btn-sm" onClick={() => { setDifficultyFilter('All'); setSearchQuery(''); }}>
