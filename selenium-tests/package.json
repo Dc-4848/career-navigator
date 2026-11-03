@@ -1,0 +1,6 @@
+{
+  "name": "career-navigator-selenium-tests",
+  "private": true,
+  "scripts": { "test": "mocha tests/login-tests.js --timeout 60000" },
+  "devDependencies": { "mocha": "^10.8.2", "selenium-webdriver": "^4.27.0" }
+}
