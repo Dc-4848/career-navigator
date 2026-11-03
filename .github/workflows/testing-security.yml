@@ -184,24 +184,7 @@ jobs:
           disable-animations: true
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: |
-            set -e
-            adb reverse tcp:5000 tcp:5000
-            adb install -r mobile/frontend/android/app/build/outputs/apk/release/app-release.apk
-            appium --address 127.0.0.1 --port 4723 > /tmp/appium.log 2>&1 &
-            cd appium-tests
-            for i in $(seq 1 30); do
-              if curl -fsS http://127.0.0.1:4723/status >/dev/null; then break; fi
-              sleep 2
-            done
-            run_tests() {
-              E2E_EMAIL="$E2E_EMAIL" E2E_PASSWORD="$E2E_PASSWORD" APP_PACKAGE="com.careernavigator.app" APP_ACTIVITY="com.careernavigator.app.MainActivity" npx mocha tests/app-e2e-tests.js --reporter spec
-            }
-            run_tests || {
-              echo "=== Appium Server Log ==="
-              cat /tmp/appium.log || true
-              exit 1
-            }
+          script: bash scripts/run-appium-ci.sh
       - name: Generate Appium Excel test plan
         if: always()
         run: python scripts/generate-test-plans.py
