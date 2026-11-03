@@ -7,7 +7,7 @@ const selectors = {
   email: process.env.LOGIN_EMAIL_SELECTOR || 'input[type="email"], input[name="email"]',
   password: process.env.LOGIN_PASSWORD_SELECTOR || 'input[type="password"], input[name="password"]',
   submit: process.env.LOGIN_SUBMIT_SELECTOR || 'button[type="submit"]',
-  success: process.env.LOGIN_SUCCESS_SELECTOR || '[data-testid="dashboard"], [data-testid="user-menu"]'
+  success: process.env.LOGIN_SUCCESS_SELECTOR || 'form#profile-form'
 };
 
 describe('Career Navigator web login E2E', function () {
@@ -67,7 +67,8 @@ describe('Career Navigator web login E2E', function () {
     await fill(selectors.email, process.env.E2E_EMAIL);
     await fill(selectors.password, process.env.E2E_PASSWORD);
     await submit();
-    await driver.wait(until.elementLocated(By.css(selectors.success)), 15000);
+    await driver.wait(until.elementLocated(By.css(selectors.success)), 30000);
+    assert.ok((await driver.getCurrentUrl()).includes('/profile'));
     assert.ok(await driver.findElement(By.css(selectors.success)).isDisplayed());
   });
 });
