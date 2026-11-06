@@ -7,6 +7,12 @@ adb reverse tcp:5000 tcp:5000
 echo "Installing release APK..."
 adb install -r mobile/frontend/android/app/build/outputs/apk/release/app-release.apk
 
+echo "Pre-installing UiAutomator2 server apks if present..."
+for apk in $(find /home/runner/.appium -name "*.apk" 2>/dev/null); do
+  echo "Pre-installing $apk"
+  adb install -r "$apk" || true
+done
+
 echo "Starting Appium server in background..."
 appium --address 127.0.0.1 --port 4723 > /tmp/appium.log 2>&1 &
 APP_PID=$!

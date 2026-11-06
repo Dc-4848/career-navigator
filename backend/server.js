@@ -40,7 +40,6 @@ app.use('/roadmaps', require('./routes/structuredRoadmapRoutes'));
 app.use('/opportunities', require('./routes/opportunityRoutes'));
 app.use('/recommendations', require('./routes/recommendationRoutes'));
 app.use('/dashboard', require('./routes/dashboardRoutes'));
-app.use('/community', require('./routes/communityRoutes'));
 
 
 // Root Endpoint (Status check)
@@ -56,11 +55,14 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   const dbState = mongoose.connection.readyState;
   const dbStatusMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  const isAtlas = mongoose.connection.host && mongoose.connection.host.includes('mongodb.net');
   res.json({
     status: 'online',
     service: 'career-navigator-backend',
     uptimeSeconds: Math.round(process.uptime()),
     database: dbStatusMap[dbState] || 'unknown',
+    databaseType: isAtlas ? 'MongoDB Atlas' : mongoose.connection.host ? 'In-Memory/Local' : 'none',
+    databaseHost: isAtlas ? 'MongoDB Atlas Cloud Cluster (*.mongodb.net)' : (mongoose.connection.host || 'none'),
     databaseName: mongoose.connection.name || 'careernavigator',
     timestamp: new Date().toISOString()
   });

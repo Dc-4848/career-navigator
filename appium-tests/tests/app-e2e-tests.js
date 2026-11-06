@@ -2,7 +2,7 @@ const { remote } = require('webdriverio');
 const assert = require('node:assert/strict');
 
 describe('Career Navigator Android E2E', function () {
-  this.timeout(120000);
+  this.timeout(300000);
   let driver;
 
   before(async function () {
@@ -19,8 +19,12 @@ describe('Career Navigator Android E2E', function () {
         'appium:appPackage': process.env.APP_PACKAGE,
         'appium:appActivity': process.env.APP_ACTIVITY,
         'appium:noReset': false,
-        'appium:newCommandTimeout': 120,
-        'appium:autoGrantPermissions': true
+        'appium:newCommandTimeout': 180,
+        'appium:autoGrantPermissions': true,
+        'appium:uiautomator2ServerInstallTimeout': 120000,
+        'appium:uiautomator2ServerLaunchTimeout': 120000,
+        'appium:adbExecTimeout': 120000,
+        'appium:androidInstallTimeout': 180000
       }
     });
   });

@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Compass, X } from 'lucide-react';
 import { useAppState } from '../store/AppContext';
+import './Navbar.css';
 
 const navItems = [
   { path: '/', label: 'Home' },
-  { path: '/community', label: 'Community' },
   { path: '/profile', label: 'Profile' },
   { path: '/domains', label: 'Domains' },
-  { path: '/roadmap', label: 'Roadmap' },
+  { path: '/roadmaps', label: 'Roadmaps' },
   { path: '/resources', label: 'Resources' },
   { path: '/skills', label: 'Skills' },
   { path: '/internships', label: 'Opportunities' },
@@ -85,16 +85,19 @@ export default function Navbar() {
             </div>
           )}
 
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={location.pathname === item.path ? 'active' : ''}
-              onClick={() => setMobileOpen(false)}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path || (item.path === '/roadmaps' && location.pathname.startsWith('/roadmap'));
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={isActive ? 'active' : ''}
+                onClick={() => setMobileOpen(false)}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
 
           {/* Auth State in Nav */}
           <div className="nav-auth-section">

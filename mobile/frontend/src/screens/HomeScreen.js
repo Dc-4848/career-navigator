@@ -169,11 +169,11 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.actionGrid}>
           <TouchableOpacity
             style={styles.actionCard}
-            onPress={() => navigation.navigate('CommunityTab')}
+            onPress={() => navigation.navigate('SkillsModal')}
           >
-            <Ionicons name="chatbubbles-outline" size={24} color={colors.accentTeal} style={{ marginBottom: 6 }} />
-            <Text style={styles.actionTitle}>Community</Text>
-            <Text style={styles.actionSub}>Polls & Updates</Text>
+            <Ionicons name="sparkles-outline" size={24} color={colors.accentTeal} style={{ marginBottom: 6 }} />
+            <Text style={styles.actionTitle}>Skill Gap</Text>
+            <Text style={styles.actionSub}>Target Analysis</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

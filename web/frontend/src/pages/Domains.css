@@ -1,30 +1,51 @@
-/* ── Domains Page Styles ── */
+/* ==========================================================================
+   CAREER NAVIGATOR: Domains Page Styles
+   Professional Dark Interface
+   ========================================================================== */
 
 .domains-section {
-  padding: var(--space-3xl) 0 var(--space-4xl);
+  padding: 2.5rem 0 5rem;
 }
 
 .domains-grid {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: 1.25rem;
+  max-width: 920px;
+  margin: 0 auto;
 }
 
+/* Domain Card */
 .domain-card {
-  opacity: 0;
-  animation: fadeInUp 0.5s ease forwards;
+  opacity: 1;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: all 0.2s ease;
   cursor: default;
+  box-shadow: var(--shadow-sm);
+  animation: fadeInUp 0.4s ease backwards;
 }
 
 .domain-card:hover {
+  border-color: rgba(2, 132, 199, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
   transform: translateY(-2px);
 }
 
+.domain-card.expanded {
+  border-color: var(--accent-primary);
+  background-color: var(--bg-card);
+}
+
+/* Card Header */
 .domain-header {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 1.25rem;
   cursor: pointer;
+  user-select: none;
 }
 
 .domain-header-text {
@@ -32,105 +53,163 @@
 }
 
 .domain-name {
-  font-size: var(--fs-xl);
+  font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 2px;
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+  margin-bottom: 0.25rem;
 }
 
 .domain-tagline {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
   margin: 0;
+  line-height: 1.4;
 }
 
 .domain-expand-icon {
-  font-size: var(--fs-xl);
+  font-size: 1.25rem;
   color: var(--text-muted);
-  transition: transform var(--transition-base);
-  user-select: none;
+  transition: transform 0.25s ease, color 0.15s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+}
+
+.domain-header:hover .domain-expand-icon {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .domain-expand-icon.rotated {
   transform: rotate(180deg);
+  color: #38BDF8;
+}
+
+/* Icon Box */
+.icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  color: #38BDF8;
+  flex-shrink: 0;
+}
+
+.icon-circle-teal,
+.icon-circle-cyan {
+  background: rgba(6, 182, 212, 0.12);
+  border-color: rgba(6, 182, 212, 0.25);
+  color: #06B6D4;
+}
+
+.icon-circle-violet,
+.icon-circle-blue {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: rgba(2, 132, 199, 0.25);
+  color: #38BDF8;
+}
+
+.icon-circle-rose {
+  background: rgba(225, 29, 72, 0.12);
+  border-color: rgba(225, 29, 72, 0.25);
+  color: #FB7185;
 }
 
 /* Expanded Details */
 .domain-details {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.25s ease;
+  margin-top: 1rem;
 }
 
 .domain-desc {
-  font-size: var(--fs-base);
-  line-height: 1.7;
-  margin-bottom: var(--space-lg);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
 }
 
 .domain-block {
-  margin-bottom: var(--space-xl);
+  margin-bottom: 1.5rem;
 }
 
 .domain-block-title {
-  font-size: var(--fs-base);
+  font-size: 0.95rem;
   font-weight: 600;
-  margin-bottom: var(--space-md);
+  margin-bottom: 0.75rem;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .domain-skills {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-sm);
+  gap: 0.5rem;
 }
 
-/* Projects */
+/* Projects Grid */
 .domain-projects {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.85rem;
 }
 
 .project-item {
-  padding: var(--space-md);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .project-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-sm);
-  gap: var(--space-sm);
+  gap: 0.5rem;
 }
 
 .project-name {
   font-weight: 600;
-  font-size: var(--fs-sm);
+  font-size: 0.875rem;
   color: var(--text-primary);
 }
 
 .project-desc {
-  font-size: var(--fs-xs);
+  font-size: 0.8rem;
   color: var(--text-muted);
+  line-height: 1.45;
   margin: 0;
 }
 
-/* Careers */
+/* Careers List */
 .domain-careers {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 0.5rem;
 }
 
 .career-item {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--glass-bg);
-  border-radius: var(--radius-md);
-  font-size: var(--fs-sm);
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
 }
 
 .career-role {
@@ -140,73 +219,64 @@
 }
 
 .career-salary {
-  color: var(--accent-teal);
+  color: #38BDF8;
   font-weight: 600;
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: 0.8rem;
 }
 
 /* Select Button */
 .domain-select-btn {
   width: 100%;
-  margin-top: var(--space-md);
+  margin-top: 1.25rem;
 }
 
-/* Color accents on expanded */
-.domain-card-teal.expanded {
-  border-color: rgba(2, 132, 199, 0.3);
-}
-.domain-card-violet.expanded {
-  border-color: rgba(6, 182, 212, 0.3);
-}
-.domain-card-rose.expanded {
-  border-color: rgba(244, 63, 94, 0.3);
-}
-
-/* Quiz CTA */
+/* Career Assessment Banner */
 .domains-quiz-cta {
-  margin-top: var(--space-2xl);
+  margin-top: 3rem;
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-xl);
-  padding: var(--space-xl) var(--space-2xl);
-  background: rgba(19, 27, 43, 0.6);
+  gap: 1.5rem;
+  padding: 1.75rem 2rem;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .quiz-cta-content h4 {
-  font-size: var(--fs-xl);
-  margin-bottom: var(--space-xs);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
 }
 
 .quiz-cta-content p {
-  font-size: var(--fs-sm);
+  font-size: 0.875rem;
   color: var(--text-secondary);
   margin: 0;
-}
-
-/* Rose button variant */
-.btn-rose {
-  background: linear-gradient(135deg, var(--accent-rose), #e05555);
-  color: white;
-  box-shadow: 0 4px 20px var(--accent-rose-glow);
-}
-.btn-rose:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px var(--accent-rose-glow);
+  line-height: 1.5;
 }
 
 @media (max-width: 768px) {
   .domains-quiz-cta {
     flex-direction: column;
     text-align: center;
-    padding: var(--space-xl);
+    padding: 1.5rem 1.25rem;
+  }
+  .domains-quiz-cta .btn {
+    width: 100%;
   }
   .domain-projects {
     grid-template-columns: 1fr;
   }
   .career-item {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
   }
 }

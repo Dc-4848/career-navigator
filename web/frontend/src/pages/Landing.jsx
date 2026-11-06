@@ -53,9 +53,9 @@ const platformCapabilities = [
     desc: 'Discover active collegiate hackathons and competitive engineering events to build portfolio projects.',
   },
   {
-    icon: Users,
-    title: 'Student Community & Polls',
-    desc: 'Engage with peer students across universities. Participate in real-time career polls, discuss interview experiences, and share project milestones.',
+    icon: Compass,
+    title: 'Curated Learning Resources',
+    desc: 'Access verified tutorials, documentation, and video courses structured for your chosen technical track.',
   },
 ];
 

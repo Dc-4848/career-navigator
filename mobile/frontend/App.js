@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
 import HomeScreen from './src/screens/HomeScreen';
-import CommunityScreen from './src/screens/CommunityScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import DomainsScreen from './src/screens/DomainsScreen';
 import RoadmapScreen from './src/screens/RoadmapScreen';
@@ -39,7 +38,6 @@ function MainTabNavigator() {
         tabBarIcon: ({ color, size, focused }) => {
           let iconName = 'ellipse-outline';
           if (route.name === 'HomeTab') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === 'CommunityTab') iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
           else if (route.name === 'RoadmapTab') iconName = focused ? 'map' : 'map-outline';
           else if (route.name === 'ResourcesTab') iconName = focused ? 'library' : 'library-outline';
           else if (route.name === 'JobsTab') iconName = focused ? 'briefcase' : 'briefcase-outline';
@@ -49,7 +47,6 @@ function MainTabNavigator() {
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="CommunityTab" component={CommunityScreen} options={{ tabBarLabel: 'Community' }} />
       <Tab.Screen name="RoadmapTab" component={RoadmapScreen} options={{ tabBarLabel: 'Roadmaps' }} />
       <Tab.Screen name="ResourcesTab" component={ResourcesScreen} options={{ tabBarLabel: 'Resources' }} />
       <Tab.Screen name="JobsTab" component={JobsScreen} options={{ tabBarLabel: 'Opportunities' }} />

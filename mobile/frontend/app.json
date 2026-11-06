@@ -17,8 +17,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#030610"
       },
-      "package": "com.careernavigator.app",
-      "usesCleartextTraffic": true
+      "package": "com.careernavigator.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
