@@ -111,12 +111,12 @@ career-navigator/
 
 | Layer | Technology | Details |
 |---|---|---|
-| **Web Frontend** | React 19.2.5, Vite 8.0.10 | Glassmorphic UI, Canvas particle backgrounds, Lucide icons, React Router |
-| **Mobile Frontend**| React Native 0.86.3, Expo SDK 57.0.31 | Cross-platform (Android & iOS), Expo Vector Icons, Dynamic LAN networking |
+| **Web Frontend** | React 19.3.0, Vite 8.3.5 | Dark SaaS UI, Lucide icons, React Router, Tailwind tokens |
+| **Mobile Frontend**| React Native 0.88.1, Expo SDK 58.0.23 | Cross-platform (Android & iOS), Expo Go ready, Dynamic LAN networking |
 | **Backend API** | Node.js, Express 5.2.1 | RESTful architecture, Stateless JWT sessions, bcryptjs password hashing |
 | **Database** | MongoDB Atlas (`careernavigator`) | Managed cloud cluster, Mongoose ODM schemas with strict validation |
 | **AI Layer** | Ollama, Qwen3-8B, BGE-M3 | 12-week roadmap generator, semantic skill gap embedding, ATS resume analyzer |
-| **Quality Assurance**| Selenium, Appium specs, Node Test Suite | 590+ test cases covering API, Web, Mobile, Security, and Load benchmarks |
+| **Quality Assurance**| Selenium Web E2E, Appium Android E2E, k6 Load Tests | CI automated regression, SAST, secret detection, and performance benchmarks |
 
 ---
 
