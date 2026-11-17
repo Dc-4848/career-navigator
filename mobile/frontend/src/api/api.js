@@ -8,10 +8,11 @@ import Constants from 'expo-constants';
 // ============================================================================
 
 const PROD_API_URL = 'https://career-navigator-2cwd.onrender.com';
-const FALLBACK_LAN_IP = '10.125.163.151';
 
 /**
- * Dynamically extract host IP from all available Expo runtime manifests
+ * Dynamically extract host IP from all available Expo runtime manifests.
+ * Returns the LAN IP string when Metro is actively serving the bundle,
+ * or null when no packager host can be detected.
  */
 export const getDetectedPackagerHost = () => {
   try {
@@ -39,39 +40,54 @@ export const getDetectedPackagerHost = () => {
       }
     }
   } catch (err) {
-    // Non-fatal, fallback to default
+    // Non-fatal
   }
   return null;
 };
 
 /**
- * Resolves the active API base URL with prioritized fallbacks
+ * Resolves the active API base URL.
+ *
+ * Priority order:
+ *   1. EXPO_PUBLIC_API_URL env var  — set in mobile/frontend/.env, inlined by Metro at
+ *      bundle time. Works in every runtime (Expo Go, dev builds, EAS standalone).
+ *   2. Standalone / EAS production build — __DEV__ is false only outside Expo Go.
+ *   3. Expo Go on Android/iOS with Metro running — uses detected LAN IP so local
+ *      backend development still works when you intentionally run your own server.
+ *   4. All other cases (no Metro session, IP changed, web) — Render backend.
+ *
+ * The old FALLBACK_LAN_IP constant has been removed. When Metro is not running we no
+ * longer fall back to a hardcoded private LAN address that may be unreachable.
  */
 export const getBaseURL = () => {
-  // 1. Explicit environment variable override
+  // 1. Explicit env var override — highest priority in every runtime
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
   }
 
-  // 2. Production build
-  if (process.env.NODE_ENV === 'production' && !__DEV__) {
+  // 2. Standalone / EAS production build (__DEV__ === false)
+  if (!__DEV__) {
     return PROD_API_URL;
   }
 
-  // 3. Mobile physical device or simulator
+  // 3. Expo Go on a physical device or simulator with Metro actively running.
+  //    Only use the detected LAN IP when Metro is actually broadcasting one.
   if (Platform.OS === 'android' || Platform.OS === 'ios') {
     const detectedIp = getDetectedPackagerHost();
-    const ip = detectedIp || FALLBACK_LAN_IP;
-    return `http://${ip}:5000`;
+    if (detectedIp) {
+      return `http://${detectedIp}:5000`;
+    }
+    // No Metro host detected — fall through to production URL.
   }
 
-  // 4. Default for local web development
-  return 'http://localhost:5000';
+  // 4. Default: Render production backend.
+  //    Reached when Metro is not running, IP changed, or running on web.
+  return PROD_API_URL;
 };
 
 const isProductionTarget = () => {
   const url = getBaseURL();
-  return url.includes('onrender.com') || (process.env.NODE_ENV === 'production' && !__DEV__);
+  return url.includes('onrender.com') || !__DEV__;
 };
 
 // Render cold starts can take ~25-35s; local LAN requests should timeout faster (15s)
@@ -97,14 +113,14 @@ api.interceptors.request.use(
   async (config) => {
     config.metadata = { startTime: Date.now() };
 
-    // Dynamically refresh baseURL in development so IP changes apply without bundle reload
+    // Dynamically refresh baseURL on every request so IP changes apply without
+    // requiring a full bundle reload (relevant during local Metro development).
     if (!config.url?.startsWith('http://') && !config.url?.startsWith('https://')) {
       config.baseURL = getBaseURL();
-      // Ensure timeout matches the target environment
       config.timeout = isProductionTarget() ? 45000 : 15000;
     }
 
-    // Attach JWT Token if present
+    // Attach JWT token if present
     try {
       const token = await AsyncStorage.getItem('userToken');
       if (token) {
@@ -129,7 +145,6 @@ api.interceptors.response.use(
   (response) => {
     if (__DEV__) {
       const duration = Date.now() - (response.config.metadata?.startTime || Date.now());
-      // Log slow responses (> 3s)
       if (duration > 3000) {
         console.log(`[API Slow] ${response.config.method?.toUpperCase()} ${response.config.url} took ${duration}ms`);
       }
@@ -154,7 +169,7 @@ api.interceptors.response.use(
     else if (error.response?.status === 401 || error.response?.status === 403) errorCategory = 'AUTHENTICATION_REQUIRED';
     else if (error.response?.status === 404) errorCategory = 'NOT_FOUND';
 
-    // 2. Safe Retry Policy: ONLY retry idempotent GET requests that experienced transient network/timeout/5xx errors
+    // 2. Safe Retry Policy: ONLY retry idempotent GET requests on transient errors
     const isIdempotentMethod = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
     const isRetryableError = isNetwork || isTimeout || is5xx;
     const currentRetry = config?._retryCount || 0;
@@ -173,14 +188,14 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    // 3. Diagnostic Logging for final failed requests (development only, no secrets)
+    // 3. Diagnostic logging for final failed requests (dev only, no secrets)
     if (__DEV__) {
       console.warn(
         `[API Error] ${method} ${url} | Category: ${errorCategory} | Duration: ${duration}ms | Status: ${error.response?.status || 'No Response'} | Msg: ${error.message}`
       );
     }
 
-    // Attach structured diagnostic details to the error object for UI consumers
+    // Attach structured diagnostic details for UI consumers
     error.diagnostic = {
       method,
       url,
@@ -210,7 +225,7 @@ export const checkBackendHealth = async () => {
     try {
       res = await api.get('/health', { timeout: 8000 });
     } catch (e) {
-      // If /health returns 404 (e.g. older production deployment), fall back to root /
+      // If /health returns 404 (older deployment), fall back to root
       if (e.response?.status === 404) {
         res = await api.get('/', { timeout: 8000 });
       } else {
