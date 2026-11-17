@@ -113,6 +113,12 @@ android/
 ios/
 
 # ===========================
+# Local dev scripts & generated artifacts
+# ===========================
+scripts/generate_qr.js
+mobile/frontend/expo-qr.svg
+
+# ===========================
 # Editor / OS files
 # ===========================
 .vscode/*
