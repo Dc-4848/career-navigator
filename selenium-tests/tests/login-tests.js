@@ -4,8 +4,8 @@ const assert = require('node:assert/strict');
 
 const BASE = process.env.WEB_BASE_URL || 'http://127.0.0.1:5173';
 const selectors = {
-  email: process.env.LOGIN_EMAIL_SELECTOR || 'input[type="email"], input[name="email"]',
-  password: process.env.LOGIN_PASSWORD_SELECTOR || 'input[type="password"], input[name="password"]',
+  email: process.env.LOGIN_EMAIL_SELECTOR || '#login-email',
+  password: process.env.LOGIN_PASSWORD_SELECTOR || '#login-password',
   submit: process.env.LOGIN_SUBMIT_SELECTOR || 'button[type="submit"]',
   success: process.env.LOGIN_SUCCESS_SELECTOR || 'form#profile-form'
 };
@@ -13,23 +13,30 @@ const selectors = {
 describe('Career Navigator web login E2E', function () {
   this.timeout(60000);
   let driver;
+
   before(async () => {
     const options = new chrome.Options();
     if (process.env.HEADLESS !== 'false') options.addArguments('--headless=new');
     options.addArguments('--no-sandbox', '--disable-dev-shm-usage');
     driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
   });
+
   after(async () => { if (driver) await driver.quit(); });
 
   async function openLogin() {
     await driver.get(BASE + (process.env.LOGIN_PATH || '/login'));
-    await driver.wait(until.elementLocated(By.css(selectors.email)), 15000);
+    const email = await driver.wait(until.elementLocated(By.css(selectors.email)), 15000);
+    await driver.wait(until.elementIsVisible(email), 15000, 'Login email field did not become visible');
+    const password = await driver.findElement(By.css(selectors.password));
+    await driver.wait(until.elementIsVisible(password), 15000, 'Login password field did not become visible');
   }
+
   async function fill(selector, value) {
     const element = await driver.findElement(By.css(selector));
     await element.clear();
     if (value) await element.sendKeys(value);
   }
+
   async function submit() { await driver.findElement(By.css(selectors.submit)).click(); }
 
   it('renders email and password inputs', async () => {
@@ -37,13 +44,16 @@ describe('Career Navigator web login E2E', function () {
     assert.ok(await driver.findElement(By.css(selectors.email)).isDisplayed());
     assert.ok(await driver.findElement(By.css(selectors.password)).isDisplayed());
   });
+
   it('validates empty credentials', async () => {
-    await openLogin(); await submit();
+    await openLogin();
+    await submit();
     const email = await driver.findElement(By.css(selectors.email));
     assert.ok((await email.getAttribute('aria-invalid')) === 'true' ||
       await email.getAttribute('validationMessage') ||
       (await driver.getPageSource()).toLowerCase().includes('required'));
   });
+
   it('rejects malformed email', async () => {
     await openLogin();
     await fill(selectors.email, 'not-an-email');
@@ -52,6 +62,7 @@ describe('Career Navigator web login E2E', function () {
     const source = (await driver.getPageSource()).toLowerCase();
     assert.ok(source.includes('email') || source.includes('valid') || source.includes('invalid'));
   });
+
   it('rejects incorrect password', async function () {
     if (!process.env.E2E_EMAIL) this.skip();
     await openLogin();
@@ -61,6 +72,7 @@ describe('Career Navigator web login E2E', function () {
     await driver.sleep(1000);
     assert.ok((await driver.getCurrentUrl()).includes('/login'));
   });
+
   it('logs in with dedicated E2E credentials', async function () {
     if (!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD) this.skip();
     await openLogin();
