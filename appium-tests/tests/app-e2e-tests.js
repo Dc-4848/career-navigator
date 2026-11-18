@@ -20,7 +20,11 @@ describe('Career Navigator Android E2E', function () {
         'appium:appActivity': process.env.APP_ACTIVITY,
         'appium:noReset': false,
         'appium:newCommandTimeout': 180,
-        'appium:autoGrantPermissions': true,
+        // The CI emulator is freshly created and the app requests no runtime
+        // permissions for the login flow. Skip Appium Settings initialization:
+        // the previous run repeatedly failed waiting for that helper app to start.
+        'appium:skipDeviceInitialization': true,
+        'appium:autoGrantPermissions': false,
         'appium:uiautomator2ServerInstallTimeout': 120000,
         'appium:uiautomator2ServerLaunchTimeout': 120000,
         'appium:adbExecTimeout': 120000,
