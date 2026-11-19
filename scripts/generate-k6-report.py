@@ -43,6 +43,8 @@ def main():
         blocker = f"k6 summary unavailable: {error}"
 
     metrics = [
+        ("Suite title", "k6 Performance Testing"),
+        ("Execution mode", "300 shared iterations with 100 virtual users"),
         ("Virtual users (max)", metric(summary, "vus_max", "max")),
         ("Iteration duration max (ms)", metric(summary, "iteration_duration", "max", "Unavailable")),
         ("Requests", metric(summary, "http_reqs", "count")),
@@ -102,7 +104,18 @@ def main():
     ])
     (args.output_dir / "k6-performance-summary.md").write_text("\n".join(lines), encoding="utf-8")
     (args.output_dir / "summary.json").write_text(
-        json.dumps({"status": status, "metrics": dict(metrics), "blocker": blocker}, indent=2),
+        json.dumps({
+            "status": status,
+            "suite": "k6 Performance Testing",
+            "planned": 300,
+            "executed": metric(summary, "iterations", "count", 0) if summary else 0,
+            "passed": metric(summary, "checks", "passes", 0) if summary else 0,
+            "failed": metric(summary, "checks", "fails", 0) if summary else 0,
+            "skipped": 0,
+            "blocked": 1 if blocker else 0,
+            "metrics": dict(metrics),
+            "blocker": blocker
+        }, indent=2),
         encoding="utf-8",
     )
     github_summary = os.getenv("GITHUB_STEP_SUMMARY")

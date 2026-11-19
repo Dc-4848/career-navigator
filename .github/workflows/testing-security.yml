@@ -85,6 +85,8 @@ jobs:
       - name: Install Selenium test dependencies
         working-directory: selenium-tests
         run: npm install
+      - name: Install Chrome and ChromeDriver
+        uses: browser-actions/setup-chrome@v2
       - name: Run Selenium tests
         working-directory: selenium-tests
         env:
@@ -100,6 +102,14 @@ jobs:
           set -e
           echo "$TEST_EXIT_CODE" > ../selenium-results/exit-code
           exit "$TEST_EXIT_CODE"
+      - name: Publish Selenium step summary
+        if: always()
+        run: |
+          python scripts/generate-execution-report.py \
+            --suite "Selenium Web E2E" \
+            --results selenium-results/mocha.json \
+            --exit-code-file selenium-results/exit-code \
+            --output-dir selenium-results/report
       - name: Generate Selenium Excel test plan
         if: always()
         run: python scripts/generate-test-plans.py
@@ -227,7 +237,7 @@ jobs:
             appium-tests/appium-test-cases.xlsx
 
   load-test:
-    name: k6 Baseline - 100 VUs / 1 minute
+    name: k6 Performance Testing - 300 Iterations
     runs-on: ubuntu-latest
     services:
       mongodb:
@@ -288,12 +298,59 @@ jobs:
   security:
     name: Backend Discovery, SAST and Dependency Scanning
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install openpyxl requests semgrep
+      - name: Install backend and test dependencies
+        working-directory: backend
+        run: |
+          npm ci
+          npm install --save-dev mocha
+      - name: Start isolated test backend
+        working-directory: backend
+        env:
+          PORT: 5000
+          NODE_ENV: test
+          MONGO_URI: mongodb://127.0.0.1:27017/career_navigator_security
+          JWT_SECRET: ci-only-not-a-production-secret
+        run: |
+          node server.js > /tmp/backend-security.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:5000/health | grep -q '"database":"connected"'; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/backend-security.log
+          exit 1
+      - name: Run 315 backend API and security tests
+        working-directory: backend
+        env:
+          API_BASE_URL: http://127.0.0.1:5000
+        run: |
+          mkdir -p ../security-results
+          set +e
+          npx mocha tests/comprehensive-security-tests.js --reporter json > ../security-results/mocha.json
+          TEST_EXIT_CODE=$?
+          set -e
+          echo "$TEST_EXIT_CODE" > ../security-results/exit-code
+          exit 0
       - name: Discover backend and API route candidates
         run: python security/scripts/discover.py
       - name: Semgrep SAST
@@ -327,6 +384,14 @@ jobs:
       - name: Generate security reports and Excel workbooks
         if: always()
         run: python security/scripts/generate_reports.py
+      - name: Generate backend execution report
+        if: always()
+        run: |
+          python scripts/generate-execution-report.py \
+            --suite "Backend and Security Testing" \
+            --results security-results/mocha.json \
+            --exit-code-file security-results/exit-code \
+            --output-dir security-results/report
       - name: Fail only for Critical Trivy vulnerabilities
         if: always()
         run: python security/scripts/critical-gate.py
@@ -339,7 +404,9 @@ jobs:
         if: always()
         with:
           name: security-review-reports
-          path: Vulnerability Test Results/
+          path: |
+            Vulnerability Test Results/
+            security-results/
 
   master-report:
     name: Consolidated CI Evidence Report

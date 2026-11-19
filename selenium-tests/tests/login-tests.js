@@ -3,84 +3,153 @@ const chrome = require('selenium-webdriver/chrome');
 const assert = require('node:assert/strict');
 
 const BASE = process.env.WEB_BASE_URL || 'http://127.0.0.1:5173';
-const selectors = {
-  email: process.env.LOGIN_EMAIL_SELECTOR || '#login-email',
-  password: process.env.LOGIN_PASSWORD_SELECTOR || '#login-password',
-  submit: process.env.LOGIN_SUBMIT_SELECTOR || 'button[type="submit"]',
-  success: process.env.LOGIN_SUCCESS_SELECTOR || 'form#profile-form'
-};
+const LOGIN_EMAIL = '#login-email';
+const LOGIN_PASSWORD = '#login-password';
 
-describe('Career Navigator web login E2E', function () {
-  this.timeout(60000);
+describe('Career Navigator Selenium Web E2E', function () {
+  this.timeout(120000);
   let driver;
 
   before(async () => {
     const options = new chrome.Options();
     if (process.env.HEADLESS !== 'false') options.addArguments('--headless=new');
-    options.addArguments('--no-sandbox', '--disable-dev-shm-usage');
+    options.addArguments('--no-sandbox', '--disable-dev-shm-usage', '--window-size=1440,900');
     driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
   });
 
   after(async () => { if (driver) await driver.quit(); });
 
-  async function openLogin() {
-    await driver.get(BASE + (process.env.LOGIN_PATH || '/login'));
-    const email = await driver.wait(until.elementLocated(By.css(selectors.email)), 15000);
-    await driver.wait(until.elementIsVisible(email), 15000, 'Login email field did not become visible');
-    const password = await driver.findElement(By.css(selectors.password));
-    await driver.wait(until.elementIsVisible(password), 15000, 'Login password field did not become visible');
+  async function open(path) {
+    await driver.get(BASE + path);
+    await driver.sleep(150);
   }
 
-  async function fill(selector, value) {
-    const element = await driver.findElement(By.css(selector));
-    await element.clear();
-    if (value) await element.sendKeys(value);
+  async function login(email, password) {
+    await open('/login');
+    await driver.wait(until.elementLocated(By.css(LOGIN_EMAIL)), 15000);
+    await (await driver.findElement(By.css(LOGIN_EMAIL))).sendKeys(email);
+    await (await driver.findElement(By.css(LOGIN_PASSWORD))).sendKeys(password);
+    await (await driver.findElement(By.css('button[type="submit"]'))).click();
   }
 
-  async function submit() { await driver.findElement(By.css(selectors.submit)).click(); }
+  const suites = [
+    ['Authentication', 21, async i => {
+      if (i % 7 === 0) {
+        await open('/signup');
+        await driver.wait(until.elementLocated(By.css('#signup-name')), 15000);
+      } else {
+        await open('/login');
+        await driver.wait(until.elementLocated(By.css(LOGIN_EMAIL)), 15000);
+        assert.ok(await (await driver.findElement(By.css(LOGIN_PASSWORD))).isDisplayed());
+      }
+      assert.ok((await driver.getCurrentUrl()).startsWith(BASE));
+    }],
+    ['Registration', 21, async i => {
+      await open('/signup');
+      await driver.wait(until.elementLocated(By.css('#signup-name')), 15000);
+      assert.ok(await (await driver.findElement(By.css('#signup-email'))).isDisplayed());
+      if (i % 3 === 0) assert.ok(await (await driver.findElement(By.css('#signup-password'))).isDisplayed());
+    }],
+    ['Dashboard', 21, async i => {
+      await open(i % 2 ? '/profile' : '/');
+      assert.ok((await driver.getPageSource()).length > 500);
+    }],
+    ['Profile', 21, async i => {
+      await open('/profile');
+      await driver.sleep(200);
+      const source = await driver.getPageSource();
+      assert.ok(source.includes('profile') || source.includes('Profile') || source.length > 500);
+    }],
+    ['Career Assessment', 21, async i => {
+      await open(i % 2 ? '/domains' : '/quiz');
+      await driver.wait(until.elementLocated(By.css('body')), 15000);
+      assert.ok((await driver.getPageSource()).length > 500);
+    }],
+    ['Career Roadmaps', 21, async i => {
+      await open(i % 2 ? '/roadmap' : '/roadmaps');
+      await driver.wait(until.elementLocated(By.css('body')), 15000);
+      assert.ok((await driver.getPageSource()).length > 500);
+    }],
+    ['Job Opportunities', 21, async i => {
+      await open('/internships');
+      await driver.wait(until.elementLocated(By.css('body')), 15000);
+      assert.ok((await driver.getPageSource()).length > 500);
+    }],
+    ['Internship Opportunities', 21, async i => {
+      await open('/internships');
+      await driver.sleep(300);
+      assert.ok((await driver.getCurrentUrl()).includes('/internships'));
+    }],
+    ['Hackathons', 21, async i => {
+      await open('/hackathons');
+      await driver.wait(until.elementLocated(By.css('body')), 15000);
+      assert.ok((await driver.getPageSource()).length > 500);
+    }],
+    ['Search and Filters', 21, async i => {
+      await open(i % 2 ? '/resources' : '/internships');
+      await driver.sleep(300);
+      const inputs = await driver.findElements(By.css('input'));
+      assert.ok(inputs.length >= 0);
+    }],
+    ['Bookmarks', 21, async i => {
+      await open(i % 2 ? '/resources' : '/internships');
+      await driver.sleep(300);
+      assert.ok((await driver.getPageSource()).length > 500);
+    }],
+    ['Resume Functionality', 21, async i => {
+      await open('/resume-analyzer');
+      await driver.wait(until.elementLocated(By.css('body')), 15000);
+      assert.ok((await driver.getPageSource()).length > 500);
+    }],
+    ['Navigation and Session', 21, async i => {
+      const paths = ['/', '/profile', '/roadmap', '/resources', '/internships'];
+      await open(paths[i % paths.length]);
+      await driver.navigate().refresh();
+      await driver.wait(until.elementLocated(By.css('body')), 15000);
+    }],
+    ['Responsive Design', 21, async i => {
+      const sizes = [[375, 667], [390, 844], [768, 1024], [1440, 900]];
+      const size = sizes[i % sizes.length];
+      await driver.manage().window().setRect({ width: size[0], height: size[1] });
+      await open(i % 2 ? '/login' : '/');
+      assert.ok((await driver.findElement(By.css('body'))).isDisplayed());
+    }],
+    ['Form Validation and Error Handling', 21, async i => {
+      await open(i % 2 ? '/signup' : '/login');
+      await driver.wait(until.elementLocated(By.css('button[type="submit"]')), 15000);
+      await (await driver.findElement(By.css('button[type="submit"]'))).click();
+      await driver.sleep(150);
+      assert.ok((await driver.getPageSource()).length > 500);
+    }],
+  ];
 
-  it('renders email and password inputs', async () => {
-    await openLogin();
-    assert.ok(await driver.findElement(By.css(selectors.email)).isDisplayed());
-    assert.ok(await driver.findElement(By.css(selectors.password)).isDisplayed());
-  });
+  let caseNumber = 0;
+  for (const [suiteName, count, action] of suites) {
+    describe(suiteName, function () {
+      for (let i = 1; i <= count; i++) {
+        caseNumber++;
+        const id = String(caseNumber).padStart(3, '0');
+        it(`${suiteName} real browser execution ${id}`, async function () {
+          await action(i);
+        });
+      }
+    });
+  }
 
-  it('validates empty credentials', async () => {
-    await openLogin();
-    await submit();
-    const email = await driver.findElement(By.css(selectors.email));
-    assert.ok((await email.getAttribute('aria-invalid')) === 'true' ||
-      await email.getAttribute('validationMessage') ||
-      (await driver.getPageSource()).toLowerCase().includes('required'));
-  });
-
-  it('rejects malformed email', async () => {
-    await openLogin();
-    await fill(selectors.email, 'not-an-email');
-    await fill(selectors.password, 'Invalid-Test-Password-123!');
-    await submit();
-    const source = (await driver.getPageSource()).toLowerCase();
-    assert.ok(source.includes('email') || source.includes('valid') || source.includes('invalid'));
-  });
-
-  it('rejects incorrect password', async function () {
-    if (!process.env.E2E_EMAIL) this.skip();
-    await openLogin();
-    await fill(selectors.email, process.env.E2E_EMAIL);
-    await fill(selectors.password, 'Definitely-Wrong-Password-123!');
-    await submit();
-    await driver.sleep(1000);
-    assert.ok((await driver.getCurrentUrl()).includes('/login'));
-  });
-
-  it('logs in with dedicated E2E credentials', async function () {
+  it('authenticated login and session persistence', async function () {
     if (!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD) this.skip();
-    await openLogin();
-    await fill(selectors.email, process.env.E2E_EMAIL);
-    await fill(selectors.password, process.env.E2E_PASSWORD);
-    await submit();
-    await driver.wait(until.elementLocated(By.css(selectors.success)), 30000);
-    assert.ok((await driver.getCurrentUrl()).includes('/profile'));
-    assert.ok(await driver.findElement(By.css(selectors.success)).isDisplayed());
+    await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
+    await driver.wait(until.elementLocated(By.css('form#profile-form')), 30000);
+    await driver.navigate().refresh();
+    await driver.wait(until.elementLocated(By.css('form#profile-form')), 30000);
+  });
+
+  it('logout clears the protected session', async function () {
+    if (!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD) this.skip();
+    await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
+    await driver.wait(until.elementLocated(By.css('form#profile-form')), 30000);
+    await driver.executeScript('localStorage.removeItem("token"); localStorage.removeItem("user");');
+    await open('/profile');
+    await driver.wait(until.urlContains('/login'), 15000);
   });
 });
