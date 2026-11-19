@@ -11,7 +11,22 @@ from openpyxl.styles import Alignment, Font, PatternFill
 
 
 def metric(summary, name, key, default="Unavailable"):
-    return summary.get("metrics", {}).get(name, {}).get("values", {}).get(key, default)
+    raw = summary.get("metrics", {}).get(name, {})
+    values = raw.get("values", raw)
+    if name == "http_req_failed" and key == "rate":
+        if "value" in raw:
+            return raw["value"]
+        if "value" in values:
+            return values["value"]
+    if key in values:
+        return values[key]
+    if key == "count" and "count" in raw:
+        return raw["count"]
+    if key == "rate" and "rate" in raw:
+        return raw["rate"]
+    if key in raw:
+        return raw[key]
+    return default
 
 
 def main():

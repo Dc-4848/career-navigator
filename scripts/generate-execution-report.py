@@ -66,6 +66,41 @@ def tests_from_results(results):
 
 def normalize_tests(results):
     normalized = []
+    for item in results.get("passes", []) or []:
+        status = "Passed"
+        title = item.get("fullTitle") or item.get("title") or "Unnamed test"
+        normalized.append({
+            "category": category(title),
+            "title": title,
+            "status": status,
+            "duration_ms": item.get("duration") or "",
+            "details": "",
+        })
+    for item in results.get("failures", []) or []:
+        status = "Failed"
+        title = item.get("fullTitle") or item.get("title") or "Unnamed test"
+        error = item.get("err") or {}
+        normalized.append(
+            {
+                "category": category(title),
+                "title": title,
+                "status": status,
+                "duration_ms": item.get("duration") or "",
+                "details": error.get("message") or error.get("stack") or "",
+            }
+        )
+    for item in results.get("pending", []) or []:
+        status = "Skipped"
+        title = item.get("fullTitle") or item.get("title") or "Unnamed test"
+        normalized.append({
+            "category": category(title),
+            "title": title,
+            "status": status,
+            "duration_ms": item.get("duration") or "",
+            "details": "",
+        })
+    if normalized:
+        return normalized
     for item in tests_from_results(results):
         state = item.get("state")
         if state == "passed":
@@ -78,15 +113,13 @@ def normalize_tests(results):
             status = "Blocked"
         title = item.get("fullTitle") or item.get("title") or "Unnamed test"
         error = item.get("err") or {}
-        normalized.append(
-            {
-                "category": category(title),
-                "title": title,
-                "status": status,
-                "duration_ms": item.get("duration") or "",
-                "details": error.get("message") or error.get("stack") or "",
-            }
-        )
+        normalized.append({
+            "category": category(title),
+            "title": title,
+            "status": status,
+            "duration_ms": item.get("duration") or "",
+            "details": error.get("message") or error.get("stack") or "",
+        })
     return normalized
 
 

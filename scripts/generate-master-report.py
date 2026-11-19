@@ -17,6 +17,14 @@ def load(path):
         return {}
 
 
+def scalar(value):
+    if isinstance(value, dict):
+        return "; ".join(f"{key}={item}" for key, item in value.items())
+    if isinstance(value, list):
+        return "; ".join(str(item) for item in value)
+    return value
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-dir", type=Path, required=True)
@@ -27,8 +35,10 @@ def main():
     suites = []
     for path in sorted(args.input_dir.rglob("summary.json")):
         data = load(path)
-        if data.get("suite") or data.get("metrics"):
-            suites.append((data.get("suite", "k6"), data))
+        if data.get("suite") and data.get("status"):
+            suites.append((data["suite"], data))
+        elif data.get("status") and "metrics" in data and "blocker" in data:
+            suites.append(("k6", data))
     security = load(args.input_dir / "security" / "security-summary.json")
     if security:
         suites.append(("Security", security))
@@ -60,7 +70,7 @@ def main():
     for name, data in suites:
         if "metrics" in data:
             for key, value in data["metrics"].items():
-                details.append([name, key, value])
+                details.append([name, key, scalar(value)])
         else:
             for key in ("status", "blocker"):
                 details.append([name, key, data.get(key, "")])
