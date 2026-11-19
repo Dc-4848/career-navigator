@@ -15,6 +15,11 @@ describe('Career Navigator Selenium Web E2E', function () {
     if (process.env.HEADLESS !== 'false') options.addArguments('--headless=new');
     options.addArguments('--no-sandbox', '--disable-dev-shm-usage', '--window-size=1440,900');
     driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+
+    if (process.env.E2E_EMAIL && process.env.E2E_PASSWORD) {
+      await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
+      await driver.wait(until.urlContains('/profile'), 30000);
+    }
   });
 
   after(async () => { if (driver) await driver.quit(); });
