@@ -5,6 +5,16 @@ const assert = require('node:assert/strict');
 const BASE = process.env.WEB_BASE_URL || 'http://127.0.0.1:5173';
 const LOGIN_EMAIL = '#login-email';
 const LOGIN_PASSWORD = '#login-password';
+const PROTECTED_PATHS = new Set([
+  '/profile',
+  '/domains',
+  '/quiz',
+  '/resources',
+  '/skills',
+  '/internships',
+  '/hackathons',
+  '/resume-analyzer',
+]);
 
 describe('Career Navigator Selenium Web E2E', function () {
   this.timeout(120000);
@@ -15,13 +25,27 @@ describe('Career Navigator Selenium Web E2E', function () {
     if (process.env.HEADLESS !== 'false') options.addArguments('--headless=new');
     options.addArguments('--no-sandbox', '--disable-dev-shm-usage', '--window-size=1440,900');
     driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+
+    await authenticateIfConfigured();
   });
 
   after(async () => { if (driver) await driver.quit(); });
 
-  async function open(path) {
+  async function open(path, recoverAuth = true) {
     await driver.get(BASE + path);
     await driver.sleep(150);
+
+    if (
+      recoverAuth &&
+      PROTECTED_PATHS.has(path) &&
+      process.env.E2E_EMAIL &&
+      process.env.E2E_PASSWORD &&
+      (await driver.getCurrentUrl()).includes('/login')
+    ) {
+      await authenticateIfConfigured();
+      await driver.get(BASE + path);
+      await driver.sleep(150);
+    }
   }
 
   async function login(email, password) {
@@ -30,6 +54,12 @@ describe('Career Navigator Selenium Web E2E', function () {
     await (await driver.findElement(By.css(LOGIN_EMAIL))).sendKeys(email);
     await (await driver.findElement(By.css(LOGIN_PASSWORD))).sendKeys(password);
     await (await driver.findElement(By.css('button[type="submit"]'))).click();
+  }
+
+  async function authenticateIfConfigured() {
+    if (!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD) return;
+    await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
+    await driver.wait(until.urlContains('/profile'), 30000);
   }
 
   const suites = [
@@ -149,7 +179,7 @@ describe('Career Navigator Selenium Web E2E', function () {
     await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
     await driver.wait(until.elementLocated(By.css('form#profile-form')), 30000);
     await driver.executeScript('localStorage.removeItem("token"); localStorage.removeItem("user");');
-    await open('/profile');
+    await open('/profile', false);
     await driver.wait(until.urlContains('/login'), 15000);
   });
 });

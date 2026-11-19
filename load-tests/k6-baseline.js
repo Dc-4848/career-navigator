@@ -44,11 +44,29 @@ export function setup() {
     timeout: '15s'
   });
   if (login.status !== 200) throw new Error(`k6 setup login failed: ${login.status}`);
-  return { token: login.json('token'), email, password };
+  const token = login.json('token');
+  const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
+
+  const profile = http.post(`${base}/profile`, JSON.stringify({
+    degree: 'B.Tech',
+    year: 4,
+    skills: ['JavaScript', 'Node.js'],
+    interests: ['Backend'],
+    goal: 'Software Engineer',
+    selectedDomain: 'Software Development'
+  }), { headers, timeout: '15s' });
+  if (profile.status !== 200) throw new Error(`k6 setup profile failed: ${profile.status}`);
+
+  const roadmap = http.post(`${base}/roadmap/save`, JSON.stringify({
+    roadmapData: { title: 'k6 Load Test Roadmap', stages: [] }
+  }), { headers, timeout: '15s' });
+  if (roadmap.status !== 200) throw new Error(`k6 setup roadmap failed: ${roadmap.status}`);
+
+  return { token, email, password };
 }
 
 function request(method, path, token, body) {
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
   const params = { headers, timeout: '10s' };
   if (method === 'GET') return http.get(`${base}${path}`, params);
   return http.post(`${base}${path}`, body ? JSON.stringify(body) : null, params);

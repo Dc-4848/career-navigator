@@ -1,5 +1,6 @@
 const { remote } = require('webdriverio');
 const assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
 
 describe('Career Navigator Android E2E', function () {
   this.timeout(300000);
@@ -39,8 +40,36 @@ describe('Career Navigator Android E2E', function () {
   }
 
   async function relaunch() {
+    execFileSync('adb', ['shell', 'pm', 'clear', process.env.APP_PACKAGE]);
     await driver.terminateApp(process.env.APP_PACKAGE);
     await driver.activateApp(process.env.APP_PACKAGE);
+  }
+
+  async function tap(x, y) {
+    await driver.performActions([{
+      type: 'pointer',
+      id: 'finger',
+      parameters: { pointerType: 'touch' },
+      actions: [
+        { type: 'pointerMove', duration: 0, x, y },
+        { type: 'pointerDown', button: 0 },
+        { type: 'pointerUp', button: 0 }
+      ]
+    }]);
+  }
+
+  async function swipe(startX, startY, endX, endY) {
+    await driver.performActions([{
+      type: 'pointer',
+      id: 'finger',
+      parameters: { pointerType: 'touch' },
+      actions: [
+        { type: 'pointerMove', duration: 0, x: startX, y: startY },
+        { type: 'pointerDown', button: 0 },
+        { type: 'pointerMove', duration: 300, x: endX, y: endY },
+        { type: 'pointerUp', button: 0 }
+      ]
+    }]);
   }
 
   async function login() {
@@ -94,16 +123,17 @@ describe('Career Navigator Android E2E', function () {
     }],
     ['Search', 21, async i => {
       if (i === 1) await login();
-      await driver.touchAction({ action: 'tap', x: 300, y: 300 });
+      await tap(300, 300);
     }],
     ['Mobile Gestures', 21, async i => {
       await relaunch();
       const size = await driver.getWindowSize();
-      await driver.touchAction([
-        { action: 'press', x: Math.floor(size.width * 0.8), y: Math.floor(size.height * 0.7) },
-        { action: 'moveTo', x: Math.floor(size.width * 0.2), y: Math.floor(size.height * 0.7) },
-        { action: 'release' }
-      ]);
+      await swipe(
+        Math.floor(size.width * 0.8),
+        Math.floor(size.height * 0.7),
+        Math.floor(size.width * 0.2),
+        Math.floor(size.height * 0.7)
+      );
     }],
     ['Network Interruption', 21, async i => relaunch()],
     ['Offline Handling', 21, async i => relaunch()],
