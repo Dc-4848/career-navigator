@@ -26,6 +26,8 @@ def main():
 
     suites = []
     for path in sorted(args.input_dir.rglob("summary.json")):
+        if path.parent.name != "report":
+            continue
         data = load(path)
         if data.get("suite") or data.get("metrics"):
             suites.append((data.get("suite", "k6"), data))
