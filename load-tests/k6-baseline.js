@@ -21,11 +21,17 @@ export const options = {
   },
   thresholds: {
     http_req_failed: ['rate<0.05'],
-    http_req_duration: ['p(95)<5000']
+    http_req_duration: ['p(95)<5000'],
+    checks: ['rate>0.99']
   }
 };
 
 const base = (__ENV.API_BASE_URL || 'http://127.0.0.1:5000').replace(/\/+$/, '');
+
+// A new user legitimately has no profile or roadmap yet, so those endpoints
+// may return 404. Keep those documented responses out of http_req_failed while
+// retaining explicit checks for every endpoint.
+http.setResponseCallback(http.expectedStatuses(200, 201, 404));
 
 export function setup() {
   const stamp = `${__VU}-${Date.now()}`;
