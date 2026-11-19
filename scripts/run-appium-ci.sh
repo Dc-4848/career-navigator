@@ -10,6 +10,7 @@ adb install -r mobile/frontend/android/app/build/outputs/apk/release/app-release
 echo "Starting Appium server in background..."
 appium --address 127.0.0.1 --port 4723 --log-level info > /tmp/appium.log 2>&1 &
 APP_PID=$!
+mkdir -p appium-results
 cleanup() {
   kill "$APP_PID" 2>/dev/null || true
 }
@@ -37,16 +38,20 @@ fi
 
 cd appium-tests
 echo "Running Appium E2E mocha tests..."
-if ! E2E_EMAIL="$E2E_EMAIL" \
+set +e
+E2E_EMAIL="$E2E_EMAIL" \
   E2E_PASSWORD="$E2E_PASSWORD" \
   APP_PACKAGE="com.careernavigator.app" \
   APP_ACTIVITY="com.careernavigator.app.MainActivity" \
-  npx mocha tests/app-e2e-tests.js --reporter spec; then
+  npx mocha tests/app-e2e-tests.js --reporter json > ../appium-results/mocha.json
+TEST_EXIT_CODE=$?
+set -e
+echo "$TEST_EXIT_CODE" > ../appium-results/exit-code
+if [ "$TEST_EXIT_CODE" -ne 0 ]; then
   echo "=== Android logcat tail on failure ==="
-  adb logcat -d -t 2000 || true
+  adb logcat -d -t 2000 > ../appium-results/logcat.txt || true
   echo "=== Appium server log on failure ==="
-  cat /tmp/appium.log || true
-  exit 1
+  cp /tmp/appium.log ../appium-results/appium.log || true
 fi
 
-echo "Appium E2E tests finished successfully."
+exit "$TEST_EXIT_CODE"
