@@ -78,7 +78,8 @@ describe('Career Navigator Selenium Web E2E', function () {
     ['Internship Opportunities', 21, async i => {
       await open('/internships');
       await driver.sleep(300);
-      assert.ok((await driver.getCurrentUrl()).includes('/internships'));
+      await driver.wait(until.urlContains('/login'), 15000);
+      assert.ok((await driver.getCurrentUrl()).includes('/login'));
     }],
     ['Hackathons', 21, async i => {
       await open('/hackathons');
