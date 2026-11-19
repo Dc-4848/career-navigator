@@ -92,15 +92,32 @@ jobs:
           E2E_EMAIL: ${{ env.E2E_EMAIL }}
           E2E_PASSWORD: ${{ env.E2E_PASSWORD }}
           LOGIN_SUCCESS_SELECTOR: "form#profile-form"
-        run: npx mocha tests/login-tests.js --reporter spec
+        run: |
+          mkdir -p ../selenium-results
+          set +e
+          npx mocha tests/login-tests.js --reporter json > ../selenium-results/mocha.json
+          TEST_EXIT_CODE=$?
+          set -e
+          echo "$TEST_EXIT_CODE" > ../selenium-results/exit-code
+          exit "$TEST_EXIT_CODE"
       - name: Generate Selenium Excel test plan
         if: always()
         run: python scripts/generate-test-plans.py
+      - name: Generate Selenium execution report
+        if: always()
+        run: |
+          python scripts/generate-execution-report.py \
+            --suite "Selenium Web E2E" \
+            --results selenium-results/mocha.json \
+            --exit-code-file selenium-results/exit-code \
+            --output-dir selenium-results/report
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: selenium-test-excel
-          path: selenium-tests/selenium-test-cases.xlsx
+          name: selenium-execution-report
+          path: |
+            selenium-results/
+            selenium-tests/selenium-test-cases.xlsx
 
   appium:
     name: Appium Android E2E
@@ -190,14 +207,24 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: bash scripts/run-appium-ci.sh
+      - name: Generate Appium execution report
+        if: always()
+        run: |
+          python scripts/generate-execution-report.py \
+            --suite "Appium Android E2E" \
+            --results appium-results/mocha.json \
+            --exit-code-file appium-results/exit-code \
+            --output-dir appium-results/report
       - name: Generate Appium Excel test plan
         if: always()
         run: python scripts/generate-test-plans.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: appium-test-excel
-          path: appium-tests/appium-test-cases.xlsx
+          name: appium-execution-report
+          path: |
+            appium-results/
+            appium-tests/appium-test-cases.xlsx
 
   load-test:
     name: k6 Baseline - 100 VUs / 1 minute
@@ -244,11 +271,18 @@ jobs:
           mkdir -p load-tests
           curl --fail-with-body -sS "$API_BASE_URL$HEALTH_PATH" >/dev/null
           k6 run --summary-export=load-tests/summary.json load-tests/k6-baseline.js
+      - name: Generate k6 performance report
+        if: always()
+        run: |
+          python -m pip install openpyxl
+          python scripts/generate-k6-report.py \
+            --summary load-tests/summary.json \
+            --output-dir load-tests/report
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: k6-load-test-results
-          path: load-tests/summary.json
+          path: load-tests/
           if-no-files-found: warn
 
   security:
@@ -277,6 +311,8 @@ jobs:
       - name: Gitleaks secret scan
         continue-on-error: true
         uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --report-format json --report-path "Vulnerability Test Results/gitleaks.json" --exit-code 0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Dependency Review on pull requests
@@ -304,3 +340,55 @@ jobs:
         with:
           name: security-review-reports
           path: Vulnerability Test Results/
+
+  master-report:
+    name: Consolidated CI Evidence Report
+    if: always()
+    needs: [selenium, appium, load-test, security]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download Selenium report
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: selenium-execution-report
+          path: master-input/selenium
+          merge-multiple: false
+      - name: Download Appium report
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: appium-execution-report
+          path: master-input/appium
+          merge-multiple: false
+      - name: Download k6 report
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: k6-load-test-results
+          path: master-input/k6
+          merge-multiple: false
+      - name: Download security report
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: security-review-reports
+          path: master-input/security
+          merge-multiple: false
+      - name: Generate master report
+        if: always()
+        run: |
+          python -m pip install openpyxl
+          python scripts/generate-master-report.py \
+            --input-dir master-input \
+            --output-dir master-report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: career-navigator-master-report
+          path: master-report/
+          if-no-files-found: error
