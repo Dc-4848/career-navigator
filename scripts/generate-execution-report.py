@@ -66,6 +66,8 @@ def tests_from_results(results):
 
 
 def normalize_tests(results):
+    if not results:
+        return []
     normalized = []
     for item in results.get("passes", []) or []:
         status = "Passed"

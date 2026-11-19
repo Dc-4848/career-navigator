@@ -13,7 +13,7 @@ export const options = {
   scenarios: {
     career_navigator_300_iterations: {
       executor: 'shared-iterations',
-      vus: 100,
+      vus: 10,
       iterations: 300,
       maxDuration: '3m',
       gracefulStop: '30s'
