@@ -44,11 +44,29 @@ export function setup() {
     timeout: '15s'
   });
   if (login.status !== 200) throw new Error(`k6 setup login failed: ${login.status}`);
-  return { token: login.json('token'), email, password };
+  const token = login.json('token');
+  const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
+
+  const profile = http.post(`${base}/profile`, JSON.stringify({
+    degree: 'Computer Science',
+    year: '2026',
+    skills: ['JavaScript', 'Node.js'],
+    interests: ['Backend Development'],
+    goal: 'Software Engineer',
+    selectedDomain: 'Web Development'
+  }), { headers, timeout: '10s' });
+  if (profile.status !== 200) throw new Error(`k6 setup profile failed: ${profile.status}`);
+
+  const roadmap = http.post(`${base}/roadmap`, JSON.stringify({
+    roadmapData: { title: 'k6 baseline roadmap', milestones: [] }
+  }), { headers, timeout: '10s' });
+  if (roadmap.status !== 200) throw new Error(`k6 setup roadmap failed: ${roadmap.status}`);
+
+  return { token, email, password };
 }
 
 function request(method, path, token, body) {
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
   const params = { headers, timeout: '10s' };
   if (method === 'GET') return http.get(`${base}${path}`, params);
   return http.post(`${base}${path}`, body ? JSON.stringify(body) : null, params);
@@ -65,7 +83,7 @@ export default function (data) {
   authLatency.add(auth.timings.duration);
   check(auth, {
     '300-iteration authentication login returns 200': r => r.status === 200,
-    'authentication response includes a JWT': r => Boolean(r.json('token'))
+    'authentication response includes a JWT': r => r.status === 200 && Boolean(r.json('token'))
   });
 
   const profile = request('GET', '/profile', token);
