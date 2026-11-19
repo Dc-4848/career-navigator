@@ -31,11 +31,12 @@ describe('Career Navigator Selenium Web E2E', function () {
 
   after(async () => { if (driver) await driver.quit(); });
 
-  async function open(path) {
+  async function open(path, recoverAuth = true) {
     await driver.get(BASE + path);
     await driver.sleep(150);
 
     if (
+      recoverAuth &&
       PROTECTED_PATHS.has(path) &&
       process.env.E2E_EMAIL &&
       process.env.E2E_PASSWORD &&
@@ -178,7 +179,7 @@ describe('Career Navigator Selenium Web E2E', function () {
     await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
     await driver.wait(until.elementLocated(By.css('form#profile-form')), 30000);
     await driver.executeScript('localStorage.removeItem("token"); localStorage.removeItem("user");');
-    await open('/profile');
+    await open('/profile', false);
     await driver.wait(until.urlContains('/login'), 15000);
   });
 });
