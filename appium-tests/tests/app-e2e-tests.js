@@ -45,6 +45,10 @@ describe('Career Navigator Android E2E', function () {
 
   async function login() {
     await relaunch();
+    const page = await driver.getPageSource();
+    if (page.includes('Home') || page.includes('Student Dashboard') || page.includes('Welcome back')) {
+      return;
+    }
     const email = await driver.$('~login-email');
     await email.waitForDisplayed({ timeout: 45000 });
     await email.clearValue();
@@ -94,16 +98,17 @@ describe('Career Navigator Android E2E', function () {
     }],
     ['Search', 21, async i => {
       if (i === 1) await login();
-      await driver.touchAction({ action: 'tap', x: 300, y: 300 });
+      await tapAt(300, 300);
     }],
     ['Mobile Gestures', 21, async i => {
       await relaunch();
       const size = await driver.getWindowSize();
-      await driver.touchAction([
-        { action: 'press', x: Math.floor(size.width * 0.8), y: Math.floor(size.height * 0.7) },
-        { action: 'moveTo', x: Math.floor(size.width * 0.2), y: Math.floor(size.height * 0.7) },
-        { action: 'release' }
-      ]);
+      await swipe(
+        Math.floor(size.width * 0.8),
+        Math.floor(size.height * 0.7),
+        Math.floor(size.width * 0.2),
+        Math.floor(size.height * 0.7)
+      );
     }],
     ['Network Interruption', 21, async i => relaunch()],
     ['Offline Handling', 21, async i => relaunch()],
@@ -127,6 +132,35 @@ describe('Career Navigator Android E2E', function () {
         it(`${suiteName} Android execution ${id}`, async function () {
           await action(i);
         });
+      }
+
+      async function tapAt(x, y) {
+        await driver.performActions([{
+          type: 'pointer',
+          id: 'finger',
+          parameters: { pointerType: 'touch' },
+          actions: [
+            { type: 'pointerMove', duration: 0, x, y },
+            { type: 'pointerDown', button: 0 },
+            { type: 'pointerUp', button: 0 }
+          ]
+        }]);
+        await driver.releaseActions();
+      }
+
+      async function swipe(fromX, fromY, toX, toY) {
+        await driver.performActions([{
+          type: 'pointer',
+          id: 'finger',
+          parameters: { pointerType: 'touch' },
+          actions: [
+            { type: 'pointerMove', duration: 0, x: fromX, y: fromY },
+            { type: 'pointerDown', button: 0 },
+            { type: 'pointerMove', duration: 500, x: toX, y: toY },
+            { type: 'pointerUp', button: 0 }
+          ]
+        }]);
+        await driver.releaseActions();
       }
     });
   }
