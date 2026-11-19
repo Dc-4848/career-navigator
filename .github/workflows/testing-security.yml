@@ -100,9 +100,6 @@ jobs:
           set -e
           echo "$TEST_EXIT_CODE" > ../selenium-results/exit-code
           exit "$TEST_EXIT_CODE"
-      - name: Generate Selenium Excel test plan
-        if: always()
-        run: python scripts/generate-test-plans.py
       - name: Generate Selenium execution report
         if: always()
         run: |
@@ -117,7 +114,6 @@ jobs:
           name: selenium-execution-report
           path: |
             selenium-results/
-            selenium-tests/selenium-test-cases.xlsx
 
   appium:
     name: Appium Android E2E
@@ -215,16 +211,12 @@ jobs:
             --results appium-results/mocha.json \
             --exit-code-file appium-results/exit-code \
             --output-dir appium-results/report
-      - name: Generate Appium Excel test plan
-        if: always()
-        run: python scripts/generate-test-plans.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: appium-execution-report
           path: |
             appium-results/
-            appium-tests/appium-test-cases.xlsx
 
   load-test:
     name: k6 Baseline - 100 VUs / 1 minute
