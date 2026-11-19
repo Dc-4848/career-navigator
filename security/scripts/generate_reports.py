@@ -95,14 +95,27 @@ for result in trivy.get("Results", []) or []:
 make_book(out/"findings.xlsx",[("Security Findings",finding_headers,findings),("Endpoint Inventory",endpoint_headers,inventory.get("api_endpoint_candidates",[])),("Dependency Vulnerabilities",dependency_headers,dependency_rows),("Risk Summary",["Metric","Value"],summary)])
 make_book(out/"endpoint-inventory.xlsx",[("Endpoint Inventory",endpoint_headers,inventory.get("api_endpoint_candidates",[]))])
 security_status = "FAILED" if counts["CRITICAL"] or counts["HIGH"] else "PASSED"
+api_execution = {}
+try:
+    api_execution = json.loads(Path("security-results/mocha.json").read_text())
+except Exception:
+    api_execution = {}
+api_stats = api_execution.get("stats", {}) if api_execution else {}
+api_executed = api_stats.get("passes", 0) + api_stats.get("failures", 0)
+api_passed = api_stats.get("passes", 0)
+api_failed = api_stats.get("failures", 0)
+if api_failed:
+    security_status = "FAILED"
+elif not api_execution:
+    security_status = "BLOCKED"
 (out/"security-summary.json").write_text(json.dumps({
     "status": security_status,
-    "planned": len(findings),
-    "executed": len(findings),
-    "passed": 0 if findings else 1,
-    "failed": len(findings),
+    "planned": api_executed or len(findings),
+    "executed": api_executed,
+    "passed": api_passed,
+    "failed": api_failed,
     "skipped": 0,
-    "blocked": 0 if semgrep or trivy or gitleaks else 1,
+    "blocked": 0 if api_execution else 1,
     "finding_counts": counts,
     "blocker": "" if semgrep or trivy or gitleaks else "No scanner output was available.",
 }, indent=2))

@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import re
+from datetime import datetime, timezone
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -188,17 +189,33 @@ def write_report(args, tests, blocked_reason, runner_exit):
         breakdown.append(["Runner setup", 0, 0, 0, 0, 0, 1])
 
     details = workbook.create_sheet("Executed Tests")
-    details.append(["Category", "Test", "Status", "Duration (ms)", "Failure details"])
-    for test in tests:
+    details.append([
+        "Test Case ID", "Module", "Test scenario", "Preconditions", "Test steps",
+        "Expected result", "Actual result", "Execution status", "Failure details",
+        "Execution timestamp"
+    ])
+    timestamp = datetime.now(timezone.utc).isoformat()
+    for index, test in enumerate(tests, 1):
+        actual = "Test passed" if test["status"] == "Passed" else test["details"] or f"Execution status: {test['status']}"
         details.append([
+            f"{slug.upper()}-{index:04d}",
             test["category"],
             test["title"],
+            "Real application runner and disposed test account/environment",
+            "Execute the Mocha/Selenium or Mocha/Appium test runner step",
+            "The actual application behavior must satisfy the test assertion",
+            actual,
             test["status"],
-            test["duration_ms"],
             test["details"],
+            timestamp,
         ])
     if blocked_reason:
-        details.append(["Runner setup", "Test runner setup", "Blocked", "", blocked_reason])
+        details.append([
+            f"{slug.upper()}-BLOCKED", "Runner setup", "Test runner setup",
+            "CI runner and required test infrastructure", "Start runner and execute suite",
+            "Runner discovers and executes tests", "Runner could not execute tests",
+            "Blocked", blocked_reason, timestamp
+        ])
 
     for sheet in workbook.worksheets:
         style_sheet(sheet)
@@ -206,18 +223,30 @@ def write_report(args, tests, blocked_reason, runner_exit):
 
     summary_path = args.output_dir / f"{slug}-execution-summary.md"
     lines = [
-        f"## {args.suite} execution results",
+        f"# {args.suite} Test Suite Summary ({planned} Test Cases)",
         "",
         f"**Overall status: {overall}**",
         "",
-        "| Category | Planned | Executed | Passed | Failed | Skipped | Blocked |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "All actual runner-discovered suites and their execution results.",
+        "",
+        "### Execution Breakdown by Category",
+        "",
+        "| # | Test Suite Category | Test Cases | Execution Status | Key Validations |",
+        "|---|---|---:|---|---|",
     ]
     for name in sorted(by_category):
         values = by_category[name]
+        category_status = (
+            "PASSED" if values["Failed"] == 0 and values["Passed"] > 0
+            else "FAILED" if values["Failed"]
+            else "SKIPPED"
+        )
+        index = sorted(by_category).index(name) + 1
         lines.append(
-            f"| {name} | {sum(values.values())} | {values['Passed'] + values['Failed']} | "
-            f"{values['Passed']} | {values['Failed']} | {values['Skipped']} | {values['Blocked']} |"
+            f"| {index} "
+            f"| {name} | {sum(values.values())} | "
+            f"{category_status} | "
+            f"{values['Passed']} passed, {values['Failed']} failed, {values['Skipped']} skipped, {values['Blocked']} blocked |"
         )
     if blocked_reason:
         lines.append(f"| Runner setup | 0 | 0 | 0 | 0 | 0 | 1 |")
