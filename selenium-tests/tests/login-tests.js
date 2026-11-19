@@ -5,6 +5,16 @@ const assert = require('node:assert/strict');
 const BASE = process.env.WEB_BASE_URL || 'http://127.0.0.1:5173';
 const LOGIN_EMAIL = '#login-email';
 const LOGIN_PASSWORD = '#login-password';
+const PROTECTED_PATHS = new Set([
+  '/profile',
+  '/domains',
+  '/quiz',
+  '/resources',
+  '/skills',
+  '/internships',
+  '/hackathons',
+  '/resume-analyzer',
+]);
 
 describe('Career Navigator Selenium Web E2E', function () {
   this.timeout(120000);
@@ -16,10 +26,7 @@ describe('Career Navigator Selenium Web E2E', function () {
     options.addArguments('--no-sandbox', '--disable-dev-shm-usage', '--window-size=1440,900');
     driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
 
-    if (process.env.E2E_EMAIL && process.env.E2E_PASSWORD) {
-      await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
-      await driver.wait(until.urlContains('/profile'), 30000);
-    }
+    await authenticateIfConfigured();
   });
 
   after(async () => { if (driver) await driver.quit(); });
@@ -27,6 +34,17 @@ describe('Career Navigator Selenium Web E2E', function () {
   async function open(path) {
     await driver.get(BASE + path);
     await driver.sleep(150);
+
+    if (
+      PROTECTED_PATHS.has(path) &&
+      process.env.E2E_EMAIL &&
+      process.env.E2E_PASSWORD &&
+      (await driver.getCurrentUrl()).includes('/login')
+    ) {
+      await authenticateIfConfigured();
+      await driver.get(BASE + path);
+      await driver.sleep(150);
+    }
   }
 
   async function login(email, password) {
@@ -35,6 +53,12 @@ describe('Career Navigator Selenium Web E2E', function () {
     await (await driver.findElement(By.css(LOGIN_EMAIL))).sendKeys(email);
     await (await driver.findElement(By.css(LOGIN_PASSWORD))).sendKeys(password);
     await (await driver.findElement(By.css('button[type="submit"]'))).click();
+  }
+
+  async function authenticateIfConfigured() {
+    if (!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD) return;
+    await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
+    await driver.wait(until.urlContains('/profile'), 30000);
   }
 
   const suites = [
