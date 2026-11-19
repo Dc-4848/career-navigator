@@ -40,7 +40,28 @@ describe('Career Navigator Android E2E', function () {
 
   async function relaunch() {
     await driver.terminateApp(process.env.APP_PACKAGE);
+    await driver.executeScript('mobile: shell', [{
+      command: 'pm',
+      args: ['clear', process.env.APP_PACKAGE]
+    }]);
     await driver.activateApp(process.env.APP_PACKAGE);
+  }
+
+  async function tap(x, y) {
+    await driver.action('pointer', { parameters: { pointerType: 'touch' } })
+      .move({ x, y })
+      .down()
+      .up()
+      .perform();
+  }
+
+  async function swipe(startX, startY, endX, endY) {
+    await driver.action('pointer', { parameters: { pointerType: 'touch' } })
+      .move({ x: startX, y: startY })
+      .down()
+      .move({ duration: 300, x: endX, y: endY })
+      .up()
+      .perform();
   }
 
   async function login() {
@@ -94,16 +115,17 @@ describe('Career Navigator Android E2E', function () {
     }],
     ['Search', 21, async i => {
       if (i === 1) await login();
-      await driver.touchAction({ action: 'tap', x: 300, y: 300 });
+      await tap(300, 300);
     }],
     ['Mobile Gestures', 21, async i => {
       await relaunch();
       const size = await driver.getWindowSize();
-      await driver.touchAction([
-        { action: 'press', x: Math.floor(size.width * 0.8), y: Math.floor(size.height * 0.7) },
-        { action: 'moveTo', x: Math.floor(size.width * 0.2), y: Math.floor(size.height * 0.7) },
-        { action: 'release' }
-      ]);
+      await swipe(
+        Math.floor(size.width * 0.8),
+        Math.floor(size.height * 0.7),
+        Math.floor(size.width * 0.2),
+        Math.floor(size.height * 0.7)
+      );
     }],
     ['Network Interruption', 21, async i => relaunch()],
     ['Offline Handling', 21, async i => relaunch()],
