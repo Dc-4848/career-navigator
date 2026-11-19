@@ -46,6 +46,7 @@ describe('Career Navigator Android E2E', function () {
   async function login() {
     await relaunch();
     const email = await driver.$('~login-email');
+    if (!(await email.isExisting())) return;
     await email.waitForDisplayed({ timeout: 45000 });
     await email.clearValue();
     await email.setValue(process.env.E2E_EMAIL);
@@ -94,16 +95,34 @@ describe('Career Navigator Android E2E', function () {
     }],
     ['Search', 21, async i => {
       if (i === 1) await login();
-      await driver.touchAction({ action: 'tap', x: 300, y: 300 });
+      await driver.performActions([{
+        type: 'pointer',
+        id: 'finger1',
+        parameters: { pointerType: 'touch' },
+        actions: [
+          { type: 'pointerMove', duration: 0, x: 300, y: 300 },
+          { type: 'pointerDown', button: 0 },
+          { type: 'pause', duration: 50 },
+          { type: 'pointerUp', button: 0 }
+        ]
+      }]);
+      await driver.releaseActions();
     }],
     ['Mobile Gestures', 21, async i => {
       await relaunch();
       const size = await driver.getWindowSize();
-      await driver.touchAction([
-        { action: 'press', x: Math.floor(size.width * 0.8), y: Math.floor(size.height * 0.7) },
-        { action: 'moveTo', x: Math.floor(size.width * 0.2), y: Math.floor(size.height * 0.7) },
-        { action: 'release' }
-      ]);
+      await driver.performActions([{
+        type: 'pointer',
+        id: 'finger1',
+        parameters: { pointerType: 'touch' },
+        actions: [
+          { type: 'pointerMove', duration: 0, x: Math.floor(size.width * 0.8), y: Math.floor(size.height * 0.7) },
+          { type: 'pointerDown', button: 0 },
+          { type: 'pointerMove', duration: 300, x: Math.floor(size.width * 0.2), y: Math.floor(size.height * 0.7) },
+          { type: 'pointerUp', button: 0 }
+        ]
+      }]);
+      await driver.releaseActions();
     }],
     ['Network Interruption', 21, async i => relaunch()],
     ['Offline Handling', 21, async i => relaunch()],

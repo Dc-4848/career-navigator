@@ -44,7 +44,7 @@ def main():
 
     metrics = [
         ("Suite title", "k6 Performance Testing"),
-        ("Execution mode", "300 shared iterations with 100 virtual users"),
+        ("Execution mode", "300 shared iterations with the configured virtual users"),
         ("Virtual users (max)", metric(summary, "vus_max", "max")),
         ("Iteration duration max (ms)", metric(summary, "iteration_duration", "max", "Unavailable")),
         ("Requests", metric(summary, "http_reqs", "count")),
@@ -109,8 +109,8 @@ def main():
             "suite": "k6 Performance Testing",
             "planned": 300,
             "executed": metric(summary, "iterations", "count", 0) if summary else 0,
-            "passed": 300 if status == "PASSED" else 0,
-            "failed": 300 if status == "FAILED" else 0,
+            "passed": metric(summary, "iterations", "count", 0) if status == "PASSED" else 0,
+            "failed": 0,
             "skipped": 0,
             "blocked": 1 if blocker else 0,
             "metrics": dict(metrics),
